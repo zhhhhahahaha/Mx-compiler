@@ -29,8 +29,8 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
         if(ctx.functiondef()!=null) {
             return visit(ctx.functiondef());
         }
-        else if (ctx.vardef()!=null) {
-            return visit(ctx.vardef());
+        else if (ctx.declarationState()!=null) {
+            return visit(ctx.declarationState());
         }
         else if (ctx.classdef()!= null) {
             return visit(ctx.classdef());
@@ -117,7 +117,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
 
     @Override
     public ASTNode visitReturnState(MxParser.ReturnStateContext ctx) {
-        returnStmtNode returnstate = (returnStmtNode) visit(ctx.Return());
+        returnStmtNode returnstate = new returnStmtNode((ExprNode)visit(ctx.expression()), new position(ctx));
         return returnstate;
     }
 
@@ -241,7 +241,10 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
     public ASTNode visitMethodExpr(MxParser.MethodExprContext ctx){
         ExprNode expr = (ExprNode) visit(ctx.expression());
         String id = ctx.Id().getText();
-        exprlistNode exprlist = (exprlistNode) visit(ctx.expressionList());
+        exprlistNode exprlist;
+        if(ctx.expressionList()!=null)
+        exprlist = (exprlistNode) visit(ctx.expressionList());
+        else exprlist = null;
         methodExprNode methodExpr = new methodExprNode(new position(ctx), expr, exprlist, id);
         methodExpr.exprtype = new type("undefine", 0);
         return methodExpr;
@@ -316,7 +319,10 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
     @Override
     public ASTNode visitFunctionExpr(MxParser.FunctionExprContext ctx) {
         String id = ctx.Id().getText();
-        exprlistNode exprlist = (exprlistNode) visit(ctx.expressionList());
+        exprlistNode exprlist;
+        if(ctx.expressionList()!=null)
+        exprlist = (exprlistNode) visit(ctx.expressionList());
+        else exprlist = null;
         functionCallNode functionCall = new functionCallNode(new position(ctx), id, exprlist);
         functionCall.exprtype = new type("undefine", 0);
         return functionCall;
@@ -455,7 +461,10 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
         }
         else if(ctx.Id()!=null) {
             String id = ctx.Id().getText();
-            functionParameterNode functionparameter = (functionParameterNode) visit(ctx.functiondef());
+            functionParameterNode functionparameter;
+            if(ctx.functionParameter()!=null)
+            functionparameter = (functionParameterNode) visit(ctx.functionParameter());
+            else functionparameter = null;
             blockStmtNode block = (blockStmtNode) visit(ctx.suite());
             classConstructorNode classConstructor = new classConstructorNode(new position(ctx), id, functionparameter, block);
             return classConstructor;

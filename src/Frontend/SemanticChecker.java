@@ -1,6 +1,7 @@
 package Frontend;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import AST.*;
 import Util.Scope;
@@ -28,27 +29,29 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("Do not have main function", it.pos);
         }
         type returntype = gScope.functionretType.get("main");
-        if(returntype.typename!="int"|| returntype.dim>0) {
+        if(returntype.typename.equals("int")|| returntype.dim>0) {
             throw new semanticError("The main function return wrong type", it.pos);
         }
         ArrayList<type> paras = gScope.funcPara.get("main");
-        if(paras.size()!=0){
+        if(paras!=null){
             throw new semanticError("The main function should not have parameters", it.pos);
         }
     }
 
     @Override
     public void visit(classDefNode it) {
-        currentScope = ((globalScope)currentScope).getscopefromClass(it.pos, it.name);
+        currentScope = gScope.getscopefromClass(it.pos, it.name);
+        gScope = gScope.classScope.get(it.name);
         it.classcontents.forEach(cd->{
             if(cd instanceof classConstructorNode) {
-                if(((classConstructorNode)cd).id!=it.name){
+                if(!Objects.equals(((classConstructorNode) cd).id, it.name)){
                     throw new semanticError("The constructor function of class" + it.name + "is invalid", it.pos);
                 }
                 ((classConstructorNode)cd).accept(this);
             }
             else cd.accept(this);
         });
+        gScope = (globalScope)gScope.parentScope;
         currentScope = currentScope.getParentScope();
     }
 
@@ -63,21 +66,21 @@ public class SemanticChecker implements ASTVisitor{
     
     @Override
     public void visit(functiondefNode it){
-        currentScope = ((globalScope)currentScope).getscopefromfunction(it.pos, it.functionName);
+        currentScope = gScope.getscopefromfunction(it.pos, it.functionName);
         isinfunction = true;
         it.block.accept(this);
-        if(it.functionName!="main") {
-            type returntype = ((globalScope)currentScope).functionretType.get(it.functionName);
+        if(!Objects.equals(it.functionName, "main")) {
+            type returntype = ((globalScope)currentScope.parentScope).functionretType.get(it.functionName);
             it.block.stmts.forEach(sd->{
                 if(sd instanceof returnStmtNode) {
                     if(((returnStmtNode)sd).value.exprtype.dim > 0) {
                         type tem = ((returnStmtNode)sd).value.exprtype;
-                        if(((returnStmtNode)sd).value.exprtype.typename!=returntype.typename||tem.dim!=returntype.dim){
+                        if(!Objects.equals(((returnStmtNode) sd).value.exprtype.typename, returntype.typename) ||tem.dim!=returntype.dim){
                             throw new semanticError("return wrong arraytype in function"+ it.functionName, it.pos);
                         }
                     }
                     else {
-                        if(((returnStmtNode)sd).value.exprtype.typename!=returntype.typename){
+                        if(!Objects.equals(((returnStmtNode) sd).value.exprtype.typename, returntype.typename)){
                             throw new semanticError("return wrong valuetype in function" + it.functionName, it.pos);
                         }
                     }
@@ -102,7 +105,7 @@ public class SemanticChecker implements ASTVisitor{
     public void visit(indexExprNode it){
         it.idexpr.accept(this);
         it.index.accept(this);
-        if(it.index.exprtype.typename!="int"){
+        if(!Objects.equals(it.index.exprtype.typename, "int")){
             throw new semanticError("index must be int", it.index.pos);
         }
         it.exprtype.typename = it.idexpr.exprtype.typename;
@@ -115,42 +118,42 @@ public class SemanticChecker implements ASTVisitor{
         it.rhs.accept(this);
         switch(it.prefixOp) {
             case lon: 
-            if(it.rhs.exprtype.typename!="bool"||it.rhs.exprtype.dim>0){
+            if(!Objects.equals(it.rhs.exprtype.typename, "bool") ||it.rhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '!'", it.pos);
             }
             else {
                 it.exprtype = it.rhs.exprtype;
             }break;
             case til:
-            if(it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+            if(!Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '~'", it.pos);
             }
             else {
                 it.exprtype = it.rhs.exprtype;
             }break;
             case dop:
-            if(it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+            if(!Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '++'", it.pos);
             }
             else {
                 it.exprtype = it.rhs.exprtype;
             }break;
             case dom:
-            if(it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+            if(!Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '--'", it.pos);
             }
             else {
                 it.exprtype = it.rhs.exprtype;
             }break;
             case plu:
-            if(it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+            if(!Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '+'", it.pos);
             }
             else {
                 it.exprtype = it.rhs.exprtype;
             }break;
             case min:
-            if(it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+            if(!Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '-'", it.pos);
             }
             else {
@@ -164,14 +167,14 @@ public class SemanticChecker implements ASTVisitor{
         it.lhs.accept(this);
         switch(it.suffixOp){
             case dop:
-            if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0){
+            if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '++'", it.pos);
             }
             else{
                 it.exprtype = it.lhs.exprtype;
             }break;
             case dom:
-            if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0){
+            if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0){
                 throw new semanticError("wrong using of '--'", it.pos);
             }
             else{
@@ -190,10 +193,17 @@ public class SemanticChecker implements ASTVisitor{
         else {
             it.exprtype = classscope.functionretType.get(it.id);
         }
-        it.exprlist.exprlist.forEach(ed->ed.accept(this));
         ArrayList<type> functionparas = classscope.funcPara.get(it.id);
-        if(functionparas.size()!=it.exprlist.exprlist.size()){
-            throw new semanticError("using wrong parameters of method "+it.id, it.pos);
+        if(it.exprlist!=null){
+            it.exprlist.exprlist.forEach(ed->ed.accept(this));
+            if(functionparas.size()!=it.exprlist.exprlist.size()){
+                throw new semanticError("using wrong parameters of method "+it.id, it.pos);
+            }
+        }
+        else {
+            if(functionparas.size()!=0){
+                throw new semanticError("using wrong parameters of method "+it.id, it.pos);
+            }
         }
         for(int i = 0; i < functionparas.size();i++){
             if(functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)){
@@ -220,126 +230,126 @@ public class SemanticChecker implements ASTVisitor{
         it.rhs.accept(this);
         switch(it.opCode){
             case mul:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '*'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case div:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '/'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case mod:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '%'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case add:
-                if(it.lhs.exprtype.typename!=it.rhs.exprtype.typename||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '+'", it.pos);
                 }
-                else if(it.lhs.exprtype.typename!="int"&&it.lhs.exprtype.typename!="string"){
+                else if(!Objects.equals(it.lhs.exprtype.typename, "int") && !Objects.equals(it.lhs.exprtype.typename, "string")){
                     throw new semanticError("wrong using of '+'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case sub:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '-'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case shl:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '<<'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case shr:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '>>'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case and:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '&'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case xor:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '^'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case or:
-                if(it.lhs.exprtype.typename!="int"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="int"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "int") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '|'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case les:
-                if(it.lhs.exprtype.typename!=it.rhs.exprtype.typename||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '<'", it.pos);
                 }
-                else if(it.lhs.exprtype.typename!="string"&&it.lhs.exprtype.typename!="int"){
+                else if(!Objects.equals(it.lhs.exprtype.typename, "string") && !Objects.equals(it.lhs.exprtype.typename, "int")){
                     throw new semanticError("wrong using of '<'", it.pos);
                 }
                 else{
                     it.exprtype = new type("bool", 0);
                 }break;
             case loe:
-                if(it.lhs.exprtype.typename!=it.rhs.exprtype.typename||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '<='", it.pos);
                 }
-                else if(it.lhs.exprtype.typename!="string"&&it.lhs.exprtype.typename!="int"){
+                else if(!Objects.equals(it.lhs.exprtype.typename, "string") && !Objects.equals(it.lhs.exprtype.typename, "int")){
                     throw new semanticError("wrong using of '<='", it.pos);
                 }
                 else{
                     it.exprtype = new type("bool", 0);
                 }break;
             case gre:
-                if(it.lhs.exprtype.typename!=it.rhs.exprtype.typename||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '>'", it.pos);
                 }
-                else if(it.lhs.exprtype.typename!="string"&&it.lhs.exprtype.typename!="int"){
+                else if(!Objects.equals(it.lhs.exprtype.typename, "string") && !Objects.equals(it.lhs.exprtype.typename, "int")){
                     throw new semanticError("wrong using of '>'", it.pos);
                 }
                 else{
                     it.exprtype = new type("bool", 0);
                 }break;
             case goe:
-                if(it.lhs.exprtype.typename!=it.rhs.exprtype.typename||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '>='", it.pos);
                 }
-                else if(it.lhs.exprtype.typename!="string"&&it.lhs.exprtype.typename!="int"){
+                else if(!Objects.equals(it.lhs.exprtype.typename, "string") && !Objects.equals(it.lhs.exprtype.typename, "int")){
                     throw new semanticError("wrong using of '>='", it.pos);
                 }
                 else{
                     it.exprtype = new type("bool", 0);
                 }break;
             case eq:
-                if(it.lhs.exprtype.typename!=it.rhs.exprtype.typename||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
                     if(it.lhs.exprtype.dim>0){
-                        if(it.rhs.exprtype.typename!="null")
+                        if(!Objects.equals(it.rhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '=='", it.pos);
                     }
                     else if(it.rhs.exprtype.dim>0){
-                        if(it.lhs.exprtype.typename!="null")
+                        if(!Objects.equals(it.lhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '=='", it.pos);
                     }
                     else {
@@ -350,13 +360,13 @@ public class SemanticChecker implements ASTVisitor{
                     it.exprtype = new type("bool", 0);
                 }break;
             case neq:
-                if(it.lhs.exprtype.typename!=it.rhs.exprtype.typename||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
                     if(it.lhs.exprtype.dim>0){
-                        if(it.rhs.exprtype.typename!="null")
+                        if(!Objects.equals(it.rhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '!='", it.pos);
                     }
                     else if(it.rhs.exprtype.dim>0){
-                        if(it.lhs.exprtype.typename!="null")
+                        if(!Objects.equals(it.lhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '!='", it.pos);
                     }
                     else {
@@ -367,14 +377,14 @@ public class SemanticChecker implements ASTVisitor{
                     it.exprtype = new type("bool", 0);
                 }break;
             case loa:
-                if(it.lhs.exprtype.typename!="bool"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="bool"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "bool") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "bool") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '&&'", it.pos);
                 }
                 else{
                     it.exprtype = it.lhs.exprtype;
                 }break;
             case loo:
-                if(it.lhs.exprtype.typename!="bool"||it.lhs.exprtype.dim>0||it.rhs.exprtype.typename!="bool"||it.rhs.exprtype.dim>0){
+                if(!Objects.equals(it.lhs.exprtype.typename, "bool") ||it.lhs.exprtype.dim>0|| !Objects.equals(it.rhs.exprtype.typename, "bool") ||it.rhs.exprtype.dim>0){
                     throw new semanticError("wrong using of '||'", it.pos);
                 }
                 else{
@@ -396,7 +406,7 @@ public class SemanticChecker implements ASTVisitor{
     public void visit(arrayCreatorNode it){
         it.exprlist.forEach(ed->{
             ed.accept(this);
-            if(ed.exprtype.typename!="int"){
+            if(!Objects.equals(ed.exprtype.typename, "int")){
                 throw new semanticError("wrong using of index", ed.pos);
             }
         });
@@ -416,9 +426,16 @@ public class SemanticChecker implements ASTVisitor{
         }
         it.exprtype = gScope.functionretType.get(it.id);
         ArrayList<type> functionparas = gScope.funcPara.get(it.id);
-        it.exprlist.exprlist.forEach(ed->ed.accept(this));
-        if(functionparas.size()!=it.exprlist.exprlist.size()){
-            throw new semanticError("using wrong parameters of function "+it.id, it.pos);
+        if(it.exprlist!=null){
+            it.exprlist.exprlist.forEach(ed->ed.accept(this));
+            if(functionparas.size()!=it.exprlist.exprlist.size()){
+                throw new semanticError("using wrong parameters of function "+it.id, it.pos);
+            }
+        }
+        else{
+            if(functionparas.size()!=0){
+                throw new semanticError("using wrong parameters of function "+it.id, it.pos);
+            }
         }
         for(int i = 0; i < functionparas.size(); i++){
             if(functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)){
@@ -443,7 +460,7 @@ public class SemanticChecker implements ASTVisitor{
         }
         if(it.condition!=null) {
             it.condition.accept(this);
-            if(it.condition.exprtype.typename!="bool"){
+            if(!Objects.equals(it.condition.exprtype.typename, "bool")){
                 throw new semanticError("for statement has invalid condition", it.condition.pos);
             }
         }
@@ -466,7 +483,7 @@ public class SemanticChecker implements ASTVisitor{
         }
         else {
             it.condition.accept(this);
-            if(it.condition.exprtype.typename!="bool"){
+            if(!Objects.equals(it.condition.exprtype.typename, "bool")){
                 throw new semanticError("if statement has invalid condition", it.condition.pos);
             }
         }
@@ -486,7 +503,7 @@ public class SemanticChecker implements ASTVisitor{
         }
         else {
             it.condition.accept(this);
-            if(it.condition.exprtype.typename!="bool"){
+            if(!Objects.equals(it.condition.exprtype.typename, "bool")){
                 throw new semanticError("while statement has invalid condition", it.condition.pos);
             }
         }
@@ -521,7 +538,7 @@ public class SemanticChecker implements ASTVisitor{
 
     @Override
     public void visit(varDefNode it){
-        if(it.vartype.typename!="int"&&it.vartype.typename!="bool"&&it.vartype.typename!="string"){
+        if(!Objects.equals(it.vartype.typename, "int") && !Objects.equals(it.vartype.typename, "bool") && !Objects.equals(it.vartype.typename, "string")){
             if(!gScope.classScope.containsKey(it.vartype.typename)){
                 throw new semanticError("using undefined type", it.pos);
             }
@@ -557,7 +574,7 @@ public class SemanticChecker implements ASTVisitor{
         ArrayList<type> funcpara = new ArrayList<>();
         if(it.parameter!=null){
             it.parameter.paras.forEach(pd->{
-                if(pd.typename.typename!="int"&&pd.typename.typename!="bool"&&pd.typename.typename!="string"){
+                if(!Objects.equals(pd.typename.typename, "int") && !Objects.equals(pd.typename.typename, "bool") && !Objects.equals(pd.typename.typename, "string")){
                     if(!gScope.classScope.containsKey(pd.typename.typename)){
                         throw new semanticError("using undefined type", it.pos);
                     }
@@ -581,7 +598,7 @@ public class SemanticChecker implements ASTVisitor{
                 it.exprtype = ((returnStmtNode)sd).value.exprtype;
             }
         });
-        if(it.exprtype.typename=="undefine") {
+        if(Objects.equals(it.exprtype.typename, "undefine")) {
             it.exprtype = new  type("void", 0);
         }
         if(it.exprlist.exprlist.size()!=funcpara.size()){

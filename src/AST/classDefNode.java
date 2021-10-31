@@ -6,7 +6,7 @@ import Util.position;
 
 public class classDefNode extends ASTNode{
     public String name;
-    public ArrayList<ASTNode> classcontents;
+    public ArrayList<ASTNode> classcontents = new ArrayList<>();
 
     public classDefNode(position pos, String name) {
         super(pos);

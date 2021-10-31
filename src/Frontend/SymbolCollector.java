@@ -150,6 +150,7 @@ public class SymbolCollector implements ASTVisitor{
         }
         type varnodetype = new type(it.typename.typename, dim);
         currentScope.addmembers(it.pos, it.parametername, varnodetype);
+        parameters.add(varnodetype);
     }
 
     @Override

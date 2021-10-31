@@ -2,7 +2,7 @@ grammar Mx;
 
 file: program* EOF;
 
-program: functiondef  | vardef | classdef;
+program: functiondef  | declarationState | classdef;
 
 functiondef: returnType Id '(' functionParameter? ')' suite;
 functionParameter : param (',' param)*;
@@ -75,9 +75,9 @@ arrayType : varType (LeftBracket RightBracket)+;
 
 classdef : Class Id '{' classcontent+ '}' ';';
 classcontent
-    : state
-    | functiondef
-    | Id '(' functionParameter ')' suite                     
+    : functiondef
+    | state
+    | Id '(' functionParameter? ')' suite
     ;
 
 primary
