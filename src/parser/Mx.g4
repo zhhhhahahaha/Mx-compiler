@@ -2,10 +2,12 @@ grammar Mx;
 
 file: program* EOF;
 
-program: functiondef | vardef | classdef;
+program: functiondef  | vardef | classdef;
 
-functiondef: returnType Id '(' functionParameter ')' suite;
-functionParameter : (varType Id (',' varType Id)*)?;
+functiondef: returnType Id '(' functionParameter? ')' suite;
+functionParameter : param (',' param)*;
+
+param: varType Id;
 
 expressionList : expression (',' expression)*;
 
@@ -27,16 +29,20 @@ state
 declarationState : vardef ';';
 ifState : If '(' expression ')' trueState=state
           (Else falseState=state)?;                        
-forState : For '(' init=state? ';' condition=state? ';' 
-           incr=state? ')' state;                         
-whileState : While '(' condition=state? ')' state;
+forState : For '(' init? ';' condition=expression? ';' 
+           incr=expression? ')' state;    
+init : vardef | expression;                     
+whileState : While '(' condition=expression? ')' state;
 
 expression
     : primary                                                #atomExpr
-    | expression '[' expression ']'                          #indexExpr
-    | expression '(' expressionList? ')'                     #functionExpr
+    | expression '[' index=expression ']'                    #indexExpr
+    | expression '.' Id '(' expressionList? ')'              #methodExpr
+    | expression '.' Id                                      #memberExpr
+    | lambda                                                 #lambdaExpr
+    | Id '(' expressionList? ')'                             #functionExpr
     | <assor=right> expression op=('++'|'--')                #suffixExpr
-    | <assoc=right> op = ('!'|'~'|'++'|'--') expression      #prefixExpr
+    | <assoc=right> op = ('!'|'~'|'++'|'--'|'+'|'-') expression     #prefixExpr
     | expression op = ('*'|'/'|'%')expression                #binaryExpr
     | expression op = ('+'|'-')expression                    #binaryExpr
     | expression op = ('<<'|'>>')expression                  #binaryExpr
@@ -48,20 +54,24 @@ expression
     | expression op = '&&' expression                        #binaryExpr
     | expression op = '||' expression                        #binaryExpr
     | <assoc=right> expression '=' expression                #assignExpr 
-    | New varType ('[' DecimalInteger ']')+                  #arrayassignExpr
+    | New creator                                            #newExpr
     ;
 
-vardef :varType (varDeclaration (',' varDeclaration)*|'[]'+ arrayDeclaration(',' arrayDeclaration)*);
+lambda:'[&]' ('(' functionParameter ')')? '->' suite '('expressionList?')';
+
+creator
+    : varType (LeftBracket expression RightBracket)+ (LeftBracket RightBracket)*                    #arraycreator
+    | varType '('')'                                                                                  #classcreator
+    ;
+
+vardef :valType varDeclaration (',' varDeclaration)*;
 varDeclaration
     : Id ('=' expression )?;
 
-arrayDeclaration
-    :  Id (expression)?                                      #dynamicarray
-    |  Id ('[' DecimalInteger ']')+                          #staticarray
-    ;
-
-returnType: Void | varType;
+returnType: Void | valType;
+valType: varType | arrayType;
 varType : Int | Bool | String | Id;
+arrayType : varType (LeftBracket RightBracket)+;
 
 classdef : Class Id '{' classcontent+ '}' ';';
 classcontent
@@ -71,16 +81,16 @@ classcontent
     ;
 
 primary
-    : '(' expression ')'
-    | STRING
-    | Id '.' 
+    : '(' expression ')' 
     | Id
+    | STRING
+    | DecimalInteger
+    | This
     | literal
     ;
 
 literal
-    : DecimalInteger
-    | True
+    : True
     | False
     | Null
     ;
@@ -106,9 +116,13 @@ Null : 'null';
 Class : 'class';
 New : 'new';
 This : 'this';
+LeftBracket : '[';
+RightBracket : ']';
+LeftParen : '(';
+RightParen : ')';
 
 STRING : '"' (ESC|.)*? '"';
-ESC : '\\"' | '\\' | '\n';
+ESC : '\\"' | '\\' | '\\n';
 
 Id : [a-zA-Z][a-zA-Z0-9_]*;
 
