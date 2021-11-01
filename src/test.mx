@@ -2,11 +2,11 @@
 Test Package: Sema_Local_Preview
 Test Target: Lambda-1
 Author: 17' zwx
-Verdict: Success
+Verdict: Fail
 Origin Package: Semantic Pretest
 */
 
-
+bool duck;
 int main(){
     int d = [&](int a) -> {
         int f = a;
@@ -16,20 +16,18 @@ int main(){
             f = f / 4;
         }
         int q = [&](int a) -> {
-            int q;
             if(a > 0){
-                q = [&](int d) -> {
+                int q = [&](int d) -> {
                     return d + 20;
                 }(a);
             } else {
-                q = [&](int d) -> {
-                    return d + 10;
+                int q = [&](int d) -> {
+                    return duck;
                 }(a);
             }
-            return q;
-        }(sum);
+        }(sum++++);
         return q;
-    }(10086);
+    }(10086)++;
     d++;
     return d;
 }

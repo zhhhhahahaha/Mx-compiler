@@ -538,20 +538,30 @@ public class SemanticChecker implements ASTVisitor{
 
     @Override
     public void visit(varDefNode it){
+        if(it.init!=null){
+            it.init.accept(this);
+        }
         if(!Objects.equals(it.vartype.typename, "int") && !Objects.equals(it.vartype.typename, "bool") && !Objects.equals(it.vartype.typename, "string")){
             if(!gScope.classScope.containsKey(it.vartype.typename)){
                 throw new semanticError("using undefined type", it.pos);
             }
         }
+        if(it.init!=null) {
+            if (!it.init.exprtype.typename.equals(it.vartype.typename)) {
+                throw new semanticError("invalid initial statement", it.pos);
+            }
+        }
         if(it.vartype instanceof arrayTypeNode) {
             int dim = ((arrayTypeNode)it.vartype).dimension;
             currentScope.addmembers(it.pos, it.name, new type(it.vartype.typename, dim));
+            if(it.init!=null) {
+                if (it.init.exprtype.dim != dim) {
+                    throw new semanticError("invalid initial statement", it.pos);
+                }
+            }
         }
         else {
             currentScope.addmembers(it.pos, it.name, new type(it.vartype.typename, 0));
-        }
-        if(it.init!=null){
-            it.init.accept(this);
         }
     }
 
@@ -602,7 +612,7 @@ public class SemanticChecker implements ASTVisitor{
             }
         });
         if(Objects.equals(it.exprtype.typename, "undefine")) {
-            it.exprtype = new  type("void", 0);
+            it.exprtype = new type("void", 0);
         }
         if(it.exprlist!=null) {
             it.exprlist.exprlist.forEach(ed->ed.accept(this));
