@@ -109,7 +109,7 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("index must be int", it.index.pos);
         }
         it.exprtype.typename = it.idexpr.exprtype.typename;
-        it.exprtype.dim = 0;
+        it.exprtype.dim --;
     }
 
 
@@ -165,6 +165,9 @@ public class SemanticChecker implements ASTVisitor{
     @Override
     public void visit(suffixExprNode it){
         it.lhs.accept(this);
+        if(it.lhs instanceof suffixExprNode){
+            throw new semanticError("wrong using of suffixstatement", it.pos);
+        }
         switch(it.suffixOp){
             case dop:
             if(!Objects.equals(it.lhs.exprtype.typename, "int") ||it.lhs.exprtype.dim>0){
