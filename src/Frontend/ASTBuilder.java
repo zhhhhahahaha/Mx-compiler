@@ -136,7 +136,8 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
     @Override
     public ASTNode visitPureState(MxParser.PureStateContext ctx) {
         ExprNode expression  = (ExprNode) visit(ctx.expression());
-        return expression;
+        exprStmtNode exprstmt = new exprStmtNode(new position(ctx), expression);
+        return exprstmt;
     }
 
     @Override
@@ -149,7 +150,9 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
     public ASTNode visitIfState(MxParser.IfStateContext ctx) {
         ExprNode condition = (ExprNode) visit(ctx.expression());
         StmtNode thenStmt = (StmtNode) visit(ctx.trueState);
-        StmtNode elseStmt  = (StmtNode) visit(ctx.falseState);
+        StmtNode elseStmt = null;
+        if(ctx.falseState!=null)
+        elseStmt  = (StmtNode) visit(ctx.falseState);
         ifStmtNode ifstate = new ifStmtNode(condition, thenStmt, elseStmt, new position(ctx));
         return ifstate;
     }

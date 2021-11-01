@@ -534,6 +534,11 @@ public class SemanticChecker implements ASTVisitor{
         }
     }
 
+    @Override
+    public void visit(exprStmtNode it){
+        it.expression.accept(this);
+    }
+
     @Override public void visit(varNode it){}
 
     @Override
