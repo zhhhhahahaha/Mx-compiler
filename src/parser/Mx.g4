@@ -57,7 +57,7 @@ expression
     | New creator                                            #newExpr
     ;
 
-lambda:'[&]' ('(' functionParameter ')')? '->' suite '('expressionList?')';
+lambda:'[&]' (LeftParen functionParameter? RightParen)? '->' suite '('expressionList?')';
 
 creator
     : varType (LeftBracket expression RightBracket)+ (LeftBracket RightBracket)*                    #arraycreator
@@ -137,3 +137,4 @@ Whitespace
 LineComment
     : '//' ~[\r\n]* ->skip
     ;
+BlockComment : '/*' .*? '*/' -> skip;

@@ -1,21 +1,12 @@
-int x = 1;
-bool b(bool x){
-    return x;
-}
-class C{
-    C(){
-        x();
-        {int x;}
-    }
-    void x(){}
-};
+/*
+Test Package: Sema_Local_Preview
+Test Target: Lambda-1
+Author: 17' zwx
+Verdict: Success
+Origin Package: Semantic Pretest
+*/
+
 int main(){
-    string x = "789dcbadcba\n";
-    int y;
-    C c;
-    c.x();
-    b(true);
-    {y = x.parseInt();
-    int x = y;}
-    return y;
+    int d = [&]() -> { return 10; }();
+    return d;
 }
