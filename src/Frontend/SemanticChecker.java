@@ -109,7 +109,7 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("index must be int", it.index.pos);
         }
         it.exprtype.typename = it.idexpr.exprtype.typename;
-        it.exprtype.dim --;
+        it.exprtype.dim = it.idexpr.exprtype.dim-1;
     }
 
 
