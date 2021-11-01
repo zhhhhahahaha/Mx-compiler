@@ -550,6 +550,9 @@ public class SemanticChecker implements ASTVisitor{
         else {
             currentScope.addmembers(it.pos, it.name, new type(it.vartype.typename, 0));
         }
+        if(it.init!=null){
+            it.init.accept(this);
+        }
     }
 
     @Override
@@ -601,13 +604,19 @@ public class SemanticChecker implements ASTVisitor{
         if(Objects.equals(it.exprtype.typename, "undefine")) {
             it.exprtype = new  type("void", 0);
         }
-        if(it.exprlist.exprlist.size()!=funcpara.size()){
-            throw new semanticError("lambda statement has wrong parameters", it.pos);
-        }
-        for(int i = 0; i < funcpara.size(); i++){
-            if(it.exprlist.exprlist.get(i).exprtype.equals(funcpara.get(i))){
-                throw new semanticError("lambda statement has mismatched parameters", it.pos);
+        if(it.exprlist!=null) {
+            if (it.exprlist.exprlist.size() != funcpara.size()) {
+                throw new semanticError("lambda statement has wrong parameters", it.pos);
             }
+            for (int i = 0; i < funcpara.size(); i++) {
+                if (it.exprlist.exprlist.get(i).exprtype.equals(funcpara.get(i))) {
+                    throw new semanticError("lambda statement has mismatched parameters", it.pos);
+                }
+            }
+        }
+        else {
+            if(funcpara.size()!=0)
+                throw new semanticError("lambda statement has wrong parameters", it.pos);
         }
         currentScope = currentScope.getParentScope();
     }
