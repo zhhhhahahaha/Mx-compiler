@@ -1,45 +1,47 @@
 /*
 Test Package: Sema_Local_Preview
 Test Target: Classes
-Author: 14' Huichen Li
+Author: 15' Lianming Zheng
 Time: 2019-10-20
 Verdict: Success
-Modified Flag: True
-Origin ID: 610
 Origin Package: Semantic Extended
 */
-class Cat{
-	void greet(){
-		println("MIAOMIAOMIAO");
-	}
-};
 
-class Lamb{
-	void greet(){
-		println("MIEMIEMIE");
-	}
-};
+A object;
 
-class Animals{
-	Cat c;
-	Lamb l;
-    Animals(){
-        c = new Cat;
-        l = new Lamb;
-    }
-	void greet(){
-		c.greet();
-		l.greet();
-	}
-};
+int main() {
+    object.func1(2, 3);
 
-int main(){
-	Cat cat;
-	cat = new Cat;
-	Lamb lamb;
-	lamb = new Lamb;
-	Animals a = new Animals;
-	a.c = cat;
-	a.l = lamb;
-	a.greet();
+    object.set(0, 1)
+          .set(1, 0);
+
+    object.copy(object.getThis())
+          .copy(object.getThis().getThis());
+
+    return 0;
 }
+
+class A {
+    void func1(int x, int y) {
+        func2(this.x*x, this.y*y);
+    }
+
+    void func2(int xx, int yy) {
+        func1(x*this.x, y*this.y);
+    }
+
+    A set(int xx, int yy) {
+        return set(x, y).set(this.x, this.y).set(xx, yy).getThis();
+    }
+
+    A copy(A other) {
+        // this = other;
+        return this;
+    }
+
+    A getThis() {
+        return getThis().getThis().getThis().getThis().copy(this);
+    }
+
+    int x; int y;
+};

@@ -88,12 +88,14 @@ public class SymbolCollector implements ASTVisitor{
         funcpara = new ArrayList<>();
         funcpara.add(new type("int", 0));
         stringscope.addfunction(pos, "ord", functionScope, new type("int", 0), funcpara);
+        stringscope.classname = "string";
         gScope.addclass(pos, "string", stringscope);
 
         //build others
         it.wholeprogram.forEach(wd->{
             if (wd instanceof classDefNode) {
                 globalScope classscope = new globalScope(gScope);
+                classscope.classname = ((classDefNode)wd).name;
                 gScope.addclass(pos, ((classDefNode)wd).name, classscope);
                 wd.accept(this);
             }
@@ -114,8 +116,8 @@ public class SymbolCollector implements ASTVisitor{
             if(cd instanceof functiondefNode) {
                 cd.accept(this);
             }
-            else if(cd instanceof varDefNode) {
-                cd.accept(this);
+            else if(cd instanceof varlistNode) {
+                ((varlistNode) cd).varlist.forEach(vd->vd.accept(this));
             }
         });
         currentScope = currentScope.getParentScope();
@@ -187,11 +189,11 @@ public class SymbolCollector implements ASTVisitor{
     @Override public void visit(breakStmtNode it){}
     @Override public void visit(continueStmtNode it){}
     @Override public void visit(exprStmtNode it){}
-    @Override public void visit(varlistNode it){}
     @Override public void visit(literalNode it){}
     @Override public void visit(idNode it){}
     @Override public void visit(lambdaExprNode it){}
     @Override public void visit(integerNode it){}
     @Override public void visit(stringNode it){}
     @Override public void visit(thisNode it){}
+    @Override public void visit(varlistNode it){}
 }

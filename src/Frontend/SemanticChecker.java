@@ -49,7 +49,11 @@ public class SemanticChecker implements ASTVisitor{
                 }
                 ((classConstructorNode)cd).accept(this);
             }
-            else cd.accept(this);
+            else if(cd instanceof varlistNode){
+            }
+            else {
+                cd.accept(this);
+            }
         });
         gScope = (globalScope)gScope.parentScope;
         currentScope = currentScope.getParentScope();
@@ -376,8 +380,7 @@ public class SemanticChecker implements ASTVisitor{
                 }break;
             case neq:
                 if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
-                    if(it.lhs.exprtype.dim>0){
-                        if(!Objects.equals(it.rhs.exprtype.typename, "null"))
+                    if(it.lhs.exprtype.dim>0){if(!Objects.equals(it.rhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '!='", it.pos);
                     }
                     else if(it.rhs.exprtype.dim>0){
@@ -412,6 +415,9 @@ public class SemanticChecker implements ASTVisitor{
     public void visit(assignExprNode it){
         it.lhs.accept(this);
         it.rhs.accept(this);
+        if(it.lhs instanceof functionCallNode){
+            throw new semanticError("functioncall cannot be leftvalue", it.pos);
+        }
         if(!it.lhs.exprtype.equals(it.rhs.exprtype)){
             throw new semanticError("wrong using of assign statement", it.pos);
         }
@@ -673,7 +679,7 @@ public class SemanticChecker implements ASTVisitor{
     @Override public void visit(stringNode it){}
 
     @Override public void visit(thisNode it){
-        globalScope classscope = (globalScope)currentScope.getParentScope();
+        globalScope classscope = (globalScope)(currentScope.getParentScope().getParentScope());
         it.exprtype.typename = classscope.classname;
     }
 }

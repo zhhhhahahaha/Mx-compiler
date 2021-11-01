@@ -24,7 +24,6 @@ public class globalScope extends Scope{
     }
 
     public void addclass(position pos, String name, globalScope classscope) {
-        classname = name;
         classScope.put(name, classscope);
     }
 
@@ -41,6 +40,4 @@ public class globalScope extends Scope{
         }
         else throw new semanticError("cannot find function" + name, pos);
     }
-
-
 }
