@@ -605,11 +605,12 @@ public class SemanticChecker implements ASTVisitor{
             it.exprtype = new  type("void", 0);
         }
         if(it.exprlist!=null) {
+            it.exprlist.exprlist.forEach(ed->ed.accept(this));
             if (it.exprlist.exprlist.size() != funcpara.size()) {
                 throw new semanticError("lambda statement has wrong parameters", it.pos);
             }
             for (int i = 0; i < funcpara.size(); i++) {
-                if (it.exprlist.exprlist.get(i).exprtype.equals(funcpara.get(i))) {
+                if (!it.exprlist.exprlist.get(i).exprtype.equals(funcpara.get(i))) {
                     throw new semanticError("lambda statement has mismatched parameters", it.pos);
                 }
             }
