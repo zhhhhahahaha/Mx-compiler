@@ -65,7 +65,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
 
     @Override
     public ASTNode visitParam(MxParser.ParamContext ctx) {
-        valTypeNode typename = (valTypeNode) visit(ctx.varType());
+        valTypeNode typename = (valTypeNode) visit(ctx.valType());
         String parametername = ctx.Id().getText();
         varNode param = new varNode(new position(ctx), typename, parametername);
         return param;
@@ -352,6 +352,19 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
         lambdaExpr.exprtype = new type("undefine", 0);
         return lambdaExpr;
     }
+    @Override
+    public ASTNode visitWrongcreator(MxParser.WrongcreatorContext ctx) {
+        wrongcreator wrong = new wrongcreator(new position(ctx));
+        return wrong;
+    }
+    @Override
+    public ASTNode visitBasiccreator(MxParser.BasiccreatorContext ctx){
+        varTypeNode varType = (varTypeNode) visit(ctx.varType());
+        classCreatorNode classCreator = new classCreatorNode(new position(ctx), varType);
+        classCreator.exprtype = new type(varType.typename, 0);
+        return classCreator;
+    }
+
 
     @Override
     public ASTNode visitArraycreator(MxParser.ArraycreatorContext ctx) {

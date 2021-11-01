@@ -390,6 +390,18 @@ public interface MxListener extends ParseTreeListener {
 	 */
 	void exitLambda(MxParser.LambdaContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code wrongcreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void enterWrongcreator(MxParser.WrongcreatorContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code wrongcreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void exitWrongcreator(MxParser.WrongcreatorContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code arraycreator}
 	 * labeled alternative in {@link MxParser#creator}.
 	 * @param ctx the parse tree
@@ -413,6 +425,18 @@ public interface MxListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitClasscreator(MxParser.ClasscreatorContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code basiccreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void enterBasiccreator(MxParser.BasiccreatorContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code basiccreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 */
+	void exitBasiccreator(MxParser.BasiccreatorContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link MxParser#vardef}.
 	 * @param ctx the parse tree

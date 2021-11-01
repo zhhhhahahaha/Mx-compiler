@@ -189,7 +189,13 @@ public class SemanticChecker implements ASTVisitor{
     @Override
     public void visit(methodExprNode it){
         it.expr.accept(this);
-        globalScope classscope = gScope.classScope.get(it.expr.exprtype.typename);
+        globalScope classscope = new globalScope(null);
+        if(gScope.classScope.containsKey(it.expr.exprtype.typename)){
+            classscope = gScope.classScope.get(it.expr.exprtype.typename);
+        }
+        else {
+            classscope = ((globalScope)gScope.parentScope).classScope.get(it.expr.exprtype.typename);
+        }
         if(!classscope.functionScope.containsKey(it.id)){
             throw new semanticError("using undefined method " + it.id, it.pos);
         }
@@ -218,7 +224,13 @@ public class SemanticChecker implements ASTVisitor{
     @Override
     public void visit(memberExprNode it){
         it.expr.accept(this);
-        globalScope classscope = gScope.classScope.get(it.expr.exprtype.typename);
+        globalScope classscope = new globalScope(null);
+        if(gScope.classScope.containsKey(it.expr.exprtype.typename)){
+            classscope = gScope.classScope.get(it.expr.exprtype.typename);
+        }
+        else {
+            classscope = ((globalScope)gScope.parentScope).classScope.get(it.expr.exprtype.typename);
+        }
         if(!classscope.members.containsKey(it.id)) {
             throw new semanticError("using undefined member" + it.id, it.pos);
         }
@@ -404,6 +416,10 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("wrong using of assign statement", it.pos);
         }
     }
+    @Override
+    public void visit(wrongcreator it){
+        throw new semanticError("wrong using of arraycreator", it.pos);
+    }
 
     @Override
     public void visit(arrayCreatorNode it){
@@ -418,17 +434,23 @@ public class SemanticChecker implements ASTVisitor{
     @Override
     public void visit(classCreatorNode it){
         if(!gScope.classScope.containsKey(it.varType.typename)){
+            if(gScope.parentScope==null||!((globalScope)gScope.parentScope).classScope.containsKey(it.varType.typename))
             throw new semanticError("create undefined class"+ it.varType.typename, it.pos);
         }
     }
 
     @Override
     public void visit(functionCallNode it){
-        if(!gScope.functionScope.containsKey(it.id)){
+        if(!gScope.functionScope.containsKey(it.id)&&!((globalScope)gScope.parentScope).functionretType.containsKey(it.id)){
             throw new semanticError("using undefined function", it.pos);
         }
         it.exprtype = gScope.functionretType.get(it.id);
-        ArrayList<type> functionparas = gScope.funcPara.get(it.id);
+        ArrayList<type> functionparas = new ArrayList<>();
+        if(gScope.functionScope.containsKey(it.id)){
+            functionparas = gScope.funcPara.get(it.id);
+        }else {
+            functionparas = ((globalScope)gScope.parentScope).funcPara.get(it.id);
+        }
         if(it.exprlist!=null){
             it.exprlist.exprlist.forEach(ed->ed.accept(this));
             if(functionparas.size()!=it.exprlist.exprlist.size()){
@@ -552,13 +574,17 @@ public class SemanticChecker implements ASTVisitor{
         if(it.init!=null){
             it.init.accept(this);
         }
+        if(currentScope.members.containsKey(it.name)){
+            throw new semanticError("redefine parameter "+it.name, it.pos);
+        }
         if(!Objects.equals(it.vartype.typename, "int") && !Objects.equals(it.vartype.typename, "bool") && !Objects.equals(it.vartype.typename, "string")){
             if(!gScope.classScope.containsKey(it.vartype.typename)){
+                if(gScope.parentScope==null||!((globalScope)gScope.parentScope).classScope.containsKey(it.vartype.typename))
                 throw new semanticError("using undefined type", it.pos);
             }
         }
         if(it.init!=null) {
-            if (!it.init.exprtype.typename.equals(it.vartype.typename)) {
+            if (!it.init.exprtype.typename.equals(it.vartype.typename)&&!it.init.exprtype.typename.equals("null")) {
                 throw new semanticError("invalid initial statement", it.pos);
             }
         }
@@ -566,7 +592,7 @@ public class SemanticChecker implements ASTVisitor{
             int dim = ((arrayTypeNode)it.vartype).dimension;
             currentScope.addmembers(it.pos, it.name, new type(it.vartype.typename, dim));
             if(it.init!=null) {
-                if (it.init.exprtype.dim != dim) {
+                if (it.init.exprtype.dim != dim&&!it.init.exprtype.typename.equals("null")) {
                     throw new semanticError("invalid initial statement", it.pos);
                 }
             }

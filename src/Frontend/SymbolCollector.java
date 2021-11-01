@@ -177,6 +177,7 @@ public class SymbolCollector implements ASTVisitor{
     @Override public void visit(assignExprNode it){}
     @Override public void visit(arrayCreatorNode it){}
     @Override public void visit(classCreatorNode it){}
+    @Override public void visit(wrongcreator it){}
     @Override public void visit(functionCallNode it){}
     @Override public void visit(blockStmtNode it){}
     @Override public void visit(forStmtNode it){}

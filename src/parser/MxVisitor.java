@@ -236,6 +236,13 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLambda(MxParser.LambdaContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code wrongcreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitWrongcreator(MxParser.WrongcreatorContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code arraycreator}
 	 * labeled alternative in {@link MxParser#creator}.
 	 * @param ctx the parse tree
@@ -249,6 +256,13 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitClasscreator(MxParser.ClasscreatorContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code basiccreator}
+	 * labeled alternative in {@link MxParser#creator}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBasiccreator(MxParser.BasiccreatorContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link MxParser#vardef}.
 	 * @param ctx the parse tree

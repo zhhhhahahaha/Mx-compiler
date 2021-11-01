@@ -7,7 +7,7 @@ program: functiondef  | declarationState | classdef;
 functiondef: returnType Id '(' functionParameter? ')' suite;
 functionParameter : param (',' param)*;
 
-param: varType Id;
+param: valType Id;
 
 expressionList : expression (',' expression)*;
 
@@ -60,8 +60,10 @@ expression
 lambda:'[&]' (LeftParen functionParameter? RightParen)? '->' suite '('expressionList?')';
 
 creator
-    : varType (LeftBracket expression RightBracket)+ (LeftBracket RightBracket)*                    #arraycreator
+    : varType (LeftBracket expression RightBracket)+ (LeftBracket RightBracket)+ (LeftBracket expression RightBracket)+ #wrongcreator
+    | varType (LeftBracket expression RightBracket)+ (LeftBracket RightBracket)*                    #arraycreator
     | varType '('')'                                                                                  #classcreator
+    | varType                                                                                         #basiccreator
     ;
 
 vardef :valType varDeclaration (',' varDeclaration)*;
@@ -73,7 +75,7 @@ valType: varType | arrayType;
 varType : Int | Bool | String | Id;
 arrayType : varType (LeftBracket RightBracket)+;
 
-classdef : Class Id '{' classcontent+ '}' ';';
+classdef : Class Id '{' classcontent* '}' ';';
 classcontent
     : functiondef
     | state

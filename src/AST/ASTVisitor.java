@@ -23,6 +23,7 @@ public interface ASTVisitor {
     void visit(assignExprNode it);
     void visit(arrayCreatorNode it);
     void visit(classCreatorNode it);
+    void visit(wrongcreator it);
     void visit(functionCallNode it);
     
     void visit(blockStmtNode it);

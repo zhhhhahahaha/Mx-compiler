@@ -11,7 +11,7 @@ public class type {
     }
 
     public boolean equals(type right){
-        if(this.typename==right.typename&&this.dim==right.dim){
+        if(this.typename.equals(right.typename)&&this.dim==right.dim){
             return true;
         }
         else {

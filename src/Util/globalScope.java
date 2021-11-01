@@ -42,10 +42,5 @@ public class globalScope extends Scope{
         else throw new semanticError("cannot find function" + name, pos);
     }
 
-    
 
-    
-
-
-      
 }
