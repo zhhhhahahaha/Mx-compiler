@@ -130,6 +130,7 @@ public class SymbolCollector implements ASTVisitor{
         }
         type returnType = new type(it.returnType.typename, dim);
         currentScope = functionscope;
+        parameters = new ArrayList<>();
         if(it.parameter!=null)
         it.parameter.accept(this);
         currentScope = currentScope.getParentScope();
@@ -138,7 +139,6 @@ public class SymbolCollector implements ASTVisitor{
 
     @Override
     public void visit(functionParameterNode it) {
-        parameters = new ArrayList<>();
         it.paras.forEach(pd->pd.accept(this));
     }
 

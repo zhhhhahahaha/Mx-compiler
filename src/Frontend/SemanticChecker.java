@@ -29,11 +29,11 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("Do not have main function", it.pos);
         }
         type returntype = gScope.functionretType.get("main");
-        if(returntype.typename.equals("int")|| returntype.dim>0) {
+        if(!returntype.typename.equals("int")|| returntype.dim>0) {
             throw new semanticError("The main function return wrong type", it.pos);
         }
         ArrayList<type> paras = gScope.funcPara.get("main");
-        if(paras!=null){
+        if(paras.size()!=0){
             throw new semanticError("The main function should not have parameters", it.pos);
         }
     }
@@ -438,7 +438,7 @@ public class SemanticChecker implements ASTVisitor{
             }
         }
         for(int i = 0; i < functionparas.size(); i++){
-            if(functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)){
+            if(!functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)){
                 throw new semanticError("using mismatched parameters of function "+it.id, it.pos);
             }
         }
