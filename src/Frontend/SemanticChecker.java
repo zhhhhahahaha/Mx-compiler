@@ -105,8 +105,8 @@ public class SemanticChecker implements ASTVisitor{
     public void visit(indexExprNode it){
         it.idexpr.accept(this);
         it.index.accept(this);
-        if(!Objects.equals(it.index.exprtype.typename, "int")){
-            throw new semanticError("index must be int", it.index.pos);
+        if(!Objects.equals(it.index.exprtype.typename, "int")||it.index.exprtype.dim>0){
+            throw new semanticError("wrong using of index", it.index.pos);
         }
         it.exprtype.typename = it.idexpr.exprtype.typename;
         it.exprtype.dim = it.idexpr.exprtype.dim-1;
