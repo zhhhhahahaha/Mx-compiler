@@ -21,7 +21,7 @@ import Util.error.*;
 
 public class main {
     public static void main(String[]args) throws Exception{
-        //String name = "D:\\Mx compiler\\Mx-compiler\\src\\test.mx";
+        String name = "D:\\Mx compiler\\Mx-compiler\\src\\test.mx";
         //InputStream input = new FileInputStream(name);
         InputStream input = System.in;
         try{
