@@ -206,7 +206,7 @@ public class SemanticChecker implements ASTVisitor{
             }
         }
         for(int i = 0; i < functionparas.size();i++){
-            if(functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)){
+            if(!functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)){
                 throw new semanticError("using mismatched parameters", it.pos);
             }
         }
@@ -470,6 +470,7 @@ public class SemanticChecker implements ASTVisitor{
         if(it.incr!=null){
             it.incr.accept(this);
         }
+        if(it.state!=null)
         it.state.accept(this);
         currentScope = currentScope.getParentScope();
         loopstage--;
@@ -498,6 +499,7 @@ public class SemanticChecker implements ASTVisitor{
     @Override
     public void visit(whileStmtNode it){
         currentScope = new Scope(currentScope);
+        loopstage++;
         if(it.condition==null) {
             throw new semanticError("while statement does not have condition", it.condition.pos);
         }
@@ -509,6 +511,7 @@ public class SemanticChecker implements ASTVisitor{
         }
         it.state.accept(this);
         currentScope = currentScope.getParentScope();
+        loopstage--;
     }
 
     @Override

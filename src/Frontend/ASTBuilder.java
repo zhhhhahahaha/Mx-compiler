@@ -123,13 +123,13 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
 
     @Override
     public ASTNode visitBreakState(MxParser.BreakStateContext ctx) {
-        breakStmtNode breakstmt = (breakStmtNode) visit(ctx.Break());
+        breakStmtNode breakstmt = new breakStmtNode(new position(ctx));
         return breakstmt;
     }
 
     @Override
     public ASTNode visitContinueState(MxParser.ContinueStateContext ctx) {
-        continueStmtNode continuestmt = (continueStmtNode) visit(ctx.Continue());
+        continueStmtNode continuestmt = new continueStmtNode(new position(ctx));
         return continuestmt;
     }
 

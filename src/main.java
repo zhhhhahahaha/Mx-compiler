@@ -22,8 +22,8 @@ import Util.error.*;
 public class main {
     public static void main(String[]args) throws Exception{
         String name = "D:\\Mx compiler\\Mx-compiler\\src\\test.mx";
-        //InputStream input = new FileInputStream(name);
-        InputStream input = System.in;
+        InputStream input = new FileInputStream(name);
+        //InputStream input = System.in;
         try{
             globalScope gScope = new globalScope(null);
             MxLexer lexer = new MxLexer(CharStreams.fromStream(input));
