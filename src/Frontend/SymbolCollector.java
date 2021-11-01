@@ -2,6 +2,7 @@ package Frontend;
 
 import AST.*;
 import Util.Scope;
+import Util.error.semanticError;
 import Util.type;
 import Util.globalScope;
 import Util.position;
@@ -115,6 +116,9 @@ public class SymbolCollector implements ASTVisitor{
         it.classcontents.forEach(cd->{
             if(cd instanceof functiondefNode) {
                 cd.accept(this);
+                if(((functiondefNode) cd).functionName.equals(it.name)){
+                    throw new semanticError("wrong constructor define", cd.pos);
+                }
             }
             else if(cd instanceof varlistNode) {
                 ((varlistNode) cd).varlist.forEach(vd->vd.accept(this));

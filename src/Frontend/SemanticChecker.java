@@ -47,7 +47,9 @@ public class SemanticChecker implements ASTVisitor{
                 if(!Objects.equals(((classConstructorNode) cd).id, it.name)){
                     throw new semanticError("The constructor function of class" + it.name + "is invalid", it.pos);
                 }
+                isinfunction = true;
                 ((classConstructorNode)cd).accept(this);
+                isinfunction = false;
             }
             else if(cd instanceof varlistNode){
             }
@@ -418,7 +420,7 @@ public class SemanticChecker implements ASTVisitor{
         if(it.lhs instanceof functionCallNode){
             throw new semanticError("functioncall cannot be leftvalue", it.pos);
         }
-        if(!it.lhs.exprtype.equals(it.rhs.exprtype)){
+        if(!it.lhs.exprtype.equals(it.rhs.exprtype)&&!it.lhs.exprtype.typename.equals("null")&&!it.rhs.exprtype.typename.equals("null")){
             throw new semanticError("wrong using of assign statement", it.pos);
         }
     }
@@ -450,7 +452,12 @@ public class SemanticChecker implements ASTVisitor{
         if(!gScope.functionScope.containsKey(it.id)&&!((globalScope)gScope.parentScope).functionretType.containsKey(it.id)){
             throw new semanticError("using undefined function", it.pos);
         }
-        it.exprtype = gScope.functionretType.get(it.id);
+        if(gScope.functionScope.containsKey(it.id)){
+            it.exprtype = gScope.functionretType.get(it.id);
+        }
+        else {
+            it.exprtype = ((globalScope)gScope.getParentScope()).functionretType.get(it.id);
+        }
         ArrayList<type> functionparas = new ArrayList<>();
         if(gScope.functionScope.containsKey(it.id)){
             functionparas = gScope.funcPara.get(it.id);
@@ -551,6 +558,7 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("return statement is not in function", it.pos);
         }
         else{
+            if(it.value!=null)
             it.value.accept(this);
         }
     }
