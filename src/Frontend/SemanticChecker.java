@@ -482,7 +482,7 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("functioncall cannot be leftvalue", it.pos);
         }
         if(!it.lhs.exprtype.equals(it.rhs.exprtype)){
-            if(!it.rhs.exprtype.equals("null"))
+            if(!it.rhs.exprtype.typename.equals("null"))
             throw new semanticError("wrong using of assign statement", it.pos);
             else {
                 if(it.lhs.exprtype.dim==0){
