@@ -485,7 +485,7 @@ public class SemanticChecker implements ASTVisitor{
             if(!it.rhs.exprtype.typename.equals("null"))
             throw new semanticError("wrong using of assign statement", it.pos);
             else {
-                if(it.lhs.exprtype.dim==0){
+                if(it.lhs.exprtype.dim==0&&(it.lhs.exprtype.typename.equals("int")||it.lhs.exprtype.typename.equals("bool"))){
                     throw new semanticError("wrong using of assign statement", it.pos);
                 }
             }
@@ -650,7 +650,7 @@ public class SemanticChecker implements ASTVisitor{
         else{
             if(it.value!=null) {
                 it.value.accept(this);
-                if (!it.value.exprtype.equals(gScope.functionretType.get(functionnameforreturn))) {
+                if (!it.value.exprtype.equals(gScope.functionretType.get(functionnameforreturn))&&!it.value.exprtype.typename.equals("null")) {
                     throw new semanticError("function has wrong return", it.pos);
                 }
             }
