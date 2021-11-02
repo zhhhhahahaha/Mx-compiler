@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import Util.position;
 
-public class varlistNode extends ASTNode{
+public class varlistNode extends StmtNode{
     public ArrayList<varDefNode> varlist = new ArrayList<>();
     public varlistNode(position pos){
         super(pos);

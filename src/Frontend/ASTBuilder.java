@@ -139,9 +139,14 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
 
     @Override
     public ASTNode visitPureState(MxParser.PureStateContext ctx) {
-        ExprNode expression  = (ExprNode) visit(ctx.expression());
-        exprStmtNode exprstmt = new exprStmtNode(new position(ctx), expression);
+        exprlistNode exprlist = (exprlistNode) visit(ctx.expressionList());
+        exprStmtNode exprstmt = new exprStmtNode(new position(ctx), exprlist);
         return exprstmt;
+    }
+    @Override 
+    public ASTNode visitSemicolon(MxParser.SemicolonContext ctx) {
+        semicolonStmtNode semicolon = new semicolonStmtNode(new position(ctx));
+        return semicolon;
     }
 
     @Override

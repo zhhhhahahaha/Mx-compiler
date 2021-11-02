@@ -22,7 +22,7 @@ state
     | Return expression? ';'                                 #returnState
     | Break ';'                                              #breakState
     | Continue ';'                                           #continueState
-    | expression ';'                                         #pureState
+    | expressionList ';'                                     #pureState
     |  ';'                                                   #semicolon
     ;
 
@@ -123,8 +123,10 @@ RightBracket : ']';
 LeftParen : '(';
 RightParen : ')';
 
-STRING : '"' (ESC|.)*? '"';
-ESC : '\\"' | '\\' | '\\n';
+STRING : '"' (SPACE | '\\' ESC | PRINTABLE_CHAR)*? '"';
+fragment ESC : ["nr\\];
+fragment SPACE : ' ';
+fragment PRINTABLE_CHAR : ~[\\\r\n\f"];
 
 Id : [a-zA-Z][a-zA-Z0-9_]*;
 

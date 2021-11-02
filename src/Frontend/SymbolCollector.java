@@ -193,6 +193,7 @@ public class SymbolCollector implements ASTVisitor{
     @Override public void visit(breakStmtNode it){}
     @Override public void visit(continueStmtNode it){}
     @Override public void visit(exprStmtNode it){}
+    @Override public void visit(semicolonStmtNode it){}
     @Override public void visit(literalNode it){}
     @Override public void visit(idNode it){}
     @Override public void visit(lambdaExprNode it){}

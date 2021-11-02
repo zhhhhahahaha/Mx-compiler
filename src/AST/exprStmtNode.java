@@ -2,11 +2,13 @@ package AST;
 
 import Util.position;
 
+import java.util.ArrayList;
+
 public class exprStmtNode extends StmtNode{
-    public ExprNode expression;
-    public exprStmtNode(position pos, ExprNode expression){
+    public exprlistNode exprlist;
+    public exprStmtNode(position pos, exprlistNode exprlist){
         super(pos);
-        this.expression = expression;
+        this.exprlist = exprlist;
     }
     @Override
     public void accept(ASTVisitor visitor){

@@ -14,12 +14,14 @@ public class SemanticChecker implements ASTVisitor{
     private Scope currentScope;
     private int loopstage;
     private boolean isinfunction;
+    private boolean hasreturn;
     
     public SemanticChecker(Scope scope) {
         gScope = (globalScope)scope;
         currentScope = scope;
         loopstage = 0;
         isinfunction = false;
+        hasreturn = false;
     }
     
     @Override
@@ -49,6 +51,13 @@ public class SemanticChecker implements ASTVisitor{
                 }
                 isinfunction = true;
                 ((classConstructorNode)cd).accept(this);
+                ((classConstructorNode) cd).block.stmts.forEach(sd->{
+                    if (sd instanceof returnStmtNode){
+                        if(((returnStmtNode) sd).value!=null){
+                            throw new semanticError("constructor cannot return any type", sd.pos);
+                        }
+                    }
+                });
                 isinfunction = false;
             }
             else if(cd instanceof varlistNode){
@@ -74,11 +83,13 @@ public class SemanticChecker implements ASTVisitor{
     public void visit(functiondefNode it){
         currentScope = gScope.getscopefromfunction(it.pos, it.functionName);
         isinfunction = true;
+        hasreturn = false;
         it.block.accept(this);
         if(!Objects.equals(it.functionName, "main")) {
             type returntype = ((globalScope)currentScope.parentScope).functionretType.get(it.functionName);
             it.block.stmts.forEach(sd->{
                 if(sd instanceof returnStmtNode) {
+                    if(((returnStmtNode) sd).value!=null)
                     if(((returnStmtNode)sd).value.exprtype.dim > 0) {
                         type tem = ((returnStmtNode)sd).value.exprtype;
                         if(!Objects.equals(((returnStmtNode) sd).value.exprtype.typename, returntype.typename) ||tem.dim!=returntype.dim){
@@ -90,9 +101,20 @@ public class SemanticChecker implements ASTVisitor{
                             throw new semanticError("return wrong valuetype in function" + it.functionName, it.pos);
                         }
                     }
+                    else {
+                        if(!returntype.typename.equals("void")){
+                            throw new semanticError("the function need return value",it.pos);
+                        }
+                    }
                 }
             });
+            if(!returntype.typename.equals("void")){
+                if(!hasreturn){
+                    throw new semanticError("the function need return statement", it.pos);
+                }
+            }
         }
+        hasreturn = false;
         isinfunction = false;
         currentScope = currentScope.getParentScope();
     }
@@ -195,6 +217,16 @@ public class SemanticChecker implements ASTVisitor{
     @Override
     public void visit(methodExprNode it){
         it.expr.accept(this);
+        if(it.expr.exprtype.dim>0){
+            if(!it.id.equals("size")){
+                throw new semanticError("the array using wrong method",it.pos);
+            }
+            if(it.exprlist!=null){
+                throw new semanticError("the size method does not have parameter", it.pos);
+            }
+            it.exprtype = new type("int", 0);
+            return;
+        }
         globalScope classscope = new globalScope(null);
         if(gScope.classScope.containsKey(it.expr.exprtype.typename)){
             classscope = gScope.classScope.get(it.expr.exprtype.typename);
@@ -368,13 +400,17 @@ public class SemanticChecker implements ASTVisitor{
                     if(it.lhs.exprtype.dim>0){
                         if(!Objects.equals(it.rhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '=='", it.pos);
+                        it.exprtype = new type("bool", 0);
                     }
                     else if(it.rhs.exprtype.dim>0){
                         if(!Objects.equals(it.lhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '=='", it.pos);
+                        it.exprtype = new type("bool", 0);
                     }
                     else {
+                        if(!it.lhs.exprtype.typename.equals("null")&&!it.rhs.exprtype.typename.equals("null"))
                         throw new semanticError("wrong using of '=='", it.pos);
+                        it.exprtype = new type("bool", 0);
                     }
                 }
                 else {
@@ -382,15 +418,20 @@ public class SemanticChecker implements ASTVisitor{
                 }break;
             case neq:
                 if(!Objects.equals(it.lhs.exprtype.typename, it.rhs.exprtype.typename) ||it.lhs.exprtype.dim>0||it.rhs.exprtype.dim>0){
-                    if(it.lhs.exprtype.dim>0){if(!Objects.equals(it.rhs.exprtype.typename, "null"))
-                        throw new semanticError("wrong using of '!='", it.pos);
+                    if(it.lhs.exprtype.dim>0) {
+                        if (!Objects.equals(it.rhs.exprtype.typename, "null"))
+                            throw new semanticError("wrong using of '!='", it.pos);
+                        it.exprtype = new type("bool", 0);
                     }
                     else if(it.rhs.exprtype.dim>0){
                         if(!Objects.equals(it.lhs.exprtype.typename, "null"))
                         throw new semanticError("wrong using of '!='", it.pos);
+                        it.exprtype = new type("bool", 0);
                     }
                     else {
+                        if(!it.lhs.exprtype.typename.equals("null")&&!it.rhs.exprtype.typename.equals("null"))
                         throw new semanticError("wrong using of '!='", it.pos);
+                        it.exprtype = new type("bool", 0);
                     }
                 }
                 else {
@@ -476,7 +517,7 @@ public class SemanticChecker implements ASTVisitor{
             }
         }
         for(int i = 0; i < functionparas.size(); i++){
-            if(!functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)){
+            if(!functionparas.get(i).equals(it.exprlist.exprlist.get(i).exprtype)&&!it.exprlist.exprlist.get(i).exprtype.typename.equals("null")){
                 throw new semanticError("using mismatched parameters of function "+it.id, it.pos);
             }
         }
@@ -487,6 +528,11 @@ public class SemanticChecker implements ASTVisitor{
         currentScope = new Scope(currentScope);
         it.stmts.forEach(sd->sd.accept(this));
         currentScope = currentScope.getParentScope();
+    }
+
+    @Override
+    public void visit(semicolonStmtNode it){
+        return;
     }
 
     @Override
@@ -503,7 +549,7 @@ public class SemanticChecker implements ASTVisitor{
             }
         }
         else {
-            throw new semanticError("for statement does not have condition", it.pos);
+            //throw new semanticError("for statement does not have condition", it.pos);
         }
         if(it.incr!=null){
             it.incr.accept(this);
@@ -526,9 +572,21 @@ public class SemanticChecker implements ASTVisitor{
                 throw new semanticError("if statement has invalid condition", it.condition.pos);
             }
         }
-        it.thenStmt.accept(this);
+        if(!(it.thenStmt instanceof blockStmtNode)){
+            currentScope = new Scope(currentScope);
+            it.thenStmt.accept(this);
+            currentScope = currentScope.getParentScope();
+        }else {
+            it.thenStmt.accept(this);
+        }
         if(it.elseStmt!=null){
+            if(it.elseStmt instanceof blockStmtNode)
             it.elseStmt.accept(this);
+            else {
+                currentScope = new Scope(currentScope);
+                it.elseStmt.accept(this);
+                currentScope = currentScope.getParentScope();
+            }
         }
         currentScope = currentScope.getParentScope();
     }
@@ -547,7 +605,13 @@ public class SemanticChecker implements ASTVisitor{
                 throw new semanticError("while statement has invalid condition", it.condition.pos);
             }
         }
+        if(it.state instanceof blockStmtNode)
         it.state.accept(this);
+        else {
+            currentScope = new Scope(currentScope);
+            it.state.accept(this);
+            currentScope = currentScope.getParentScope();
+        }
         currentScope = currentScope.getParentScope();
         loopstage--;
     }
@@ -561,6 +625,7 @@ public class SemanticChecker implements ASTVisitor{
             if(it.value!=null)
             it.value.accept(this);
         }
+        hasreturn = true;
     }
 
     @Override
@@ -578,7 +643,7 @@ public class SemanticChecker implements ASTVisitor{
 
     @Override
     public void visit(exprStmtNode it){
-        it.expression.accept(this);
+        it.exprlist.accept(this);
     }
 
     @Override public void visit(varNode it){}
@@ -687,7 +752,7 @@ public class SemanticChecker implements ASTVisitor{
     @Override public void visit(stringNode it){}
 
     @Override public void visit(thisNode it){
-        globalScope classscope = (globalScope)(currentScope.getParentScope().getParentScope());
+        globalScope classscope = gScope;
         it.exprtype.typename = classscope.classname;
     }
 }

@@ -34,6 +34,7 @@ public interface ASTVisitor {
     void visit(breakStmtNode it);
     void visit(continueStmtNode it);
     void visit(exprStmtNode it);
+    void visit(semicolonStmtNode it);
 
     void visit(varNode it);
     void visit(varDefNode it);
