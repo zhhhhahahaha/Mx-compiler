@@ -648,11 +648,12 @@ public class SemanticChecker implements ASTVisitor{
             throw new semanticError("return statement is not in function", it.pos);
         }
         else{
-            if(it.value!=null)
-            it.value.accept(this);
-        }
-        if(!it.value.exprtype.equals(gScope.functionretType.get(functionnameforreturn))){
-            throw new semanticError("function has wrong return", it.pos);
+            if(it.value!=null) {
+                it.value.accept(this);
+                if (!it.value.exprtype.equals(gScope.functionretType.get(functionnameforreturn))) {
+                    throw new semanticError("function has wrong return", it.pos);
+                }
+            }
         }
 
         hasreturn = true;
