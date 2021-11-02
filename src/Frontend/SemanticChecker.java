@@ -15,6 +15,7 @@ public class SemanticChecker implements ASTVisitor{
     private int loopstage;
     private boolean isinfunction;
     private boolean hasreturn;
+    private String functionnameforreturn;
     
     public SemanticChecker(Scope scope) {
         gScope = (globalScope)scope;
@@ -22,6 +23,7 @@ public class SemanticChecker implements ASTVisitor{
         loopstage = 0;
         isinfunction = false;
         hasreturn = false;
+        functionnameforreturn = "undefine";
     }
     
     @Override
@@ -50,6 +52,7 @@ public class SemanticChecker implements ASTVisitor{
                     throw new semanticError("The constructor function of class" + it.name + "is invalid", it.pos);
                 }
                 isinfunction = true;
+                functionnameforreturn = it.name;
                 ((classConstructorNode)cd).accept(this);
                 ((classConstructorNode) cd).block.stmts.forEach(sd->{
                     if (sd instanceof returnStmtNode){
@@ -83,6 +86,7 @@ public class SemanticChecker implements ASTVisitor{
     public void visit(functiondefNode it){
         currentScope = gScope.getscopefromfunction(it.pos, it.functionName);
         isinfunction = true;
+        functionnameforreturn = it.functionName;
         hasreturn = false;
         it.block.accept(this);
         if(!Objects.equals(it.functionName, "main")) {
@@ -114,6 +118,16 @@ public class SemanticChecker implements ASTVisitor{
                 }
             }
         }
+        else {
+            it.block.stmts.forEach(sd->{
+                if(sd instanceof returnStmtNode) {
+                    if(!((returnStmtNode) sd).value.exprtype.typename.equals("int")||((returnStmtNode) sd).value.exprtype.dim>0){
+                        throw new semanticError("the main function has wrong return", sd.pos);
+                    }
+                }
+            });
+
+        }
         hasreturn = false;
         isinfunction = false;
         currentScope = currentScope.getParentScope();
@@ -135,6 +149,9 @@ public class SemanticChecker implements ASTVisitor{
         it.index.accept(this);
         if(!Objects.equals(it.index.exprtype.typename, "int")||it.index.exprtype.dim>0){
             throw new semanticError("wrong using of index", it.index.pos);
+        }
+        if(it.idexpr.exprtype.dim<=0){
+            throw new semanticError("wrong using of index expression", it.pos);
         }
         it.exprtype.typename = it.idexpr.exprtype.typename;
         it.exprtype.dim = it.idexpr.exprtype.dim-1;
@@ -457,12 +474,21 @@ public class SemanticChecker implements ASTVisitor{
     @Override
     public void visit(assignExprNode it){
         it.lhs.accept(this);
+        if(it.lhs instanceof literalNode||it.lhs instanceof integerNode||it.lhs instanceof stringNode){
+            throw new semanticError("the left expression cannot be assigned", it.pos);
+        }
         it.rhs.accept(this);
         if(it.lhs instanceof functionCallNode){
             throw new semanticError("functioncall cannot be leftvalue", it.pos);
         }
-        if(!it.lhs.exprtype.equals(it.rhs.exprtype)&&!it.lhs.exprtype.typename.equals("null")&&!it.rhs.exprtype.typename.equals("null")){
+        if(!it.lhs.exprtype.equals(it.rhs.exprtype)){
+            if(!it.rhs.exprtype.equals("null"))
             throw new semanticError("wrong using of assign statement", it.pos);
+            else {
+                if(it.lhs.exprtype.dim==0){
+                    throw new semanticError("wrong using of assign statement", it.pos);
+                }
+            }
         }
     }
     @Override
@@ -625,6 +651,10 @@ public class SemanticChecker implements ASTVisitor{
             if(it.value!=null)
             it.value.accept(this);
         }
+        if(!it.value.exprtype.equals(gScope.functionretType.get(functionnameforreturn))){
+            throw new semanticError("function has wrong return", it.pos);
+        }
+
         hasreturn = true;
     }
 
@@ -650,6 +680,9 @@ public class SemanticChecker implements ASTVisitor{
 
     @Override
     public void visit(varDefNode it){
+        if(currentScope.members.containsKey(it.name)){
+            throw new semanticError("redefine of variable "+it.name, it.pos);
+        }
         if(it.init!=null){
             it.init.accept(this);
         }

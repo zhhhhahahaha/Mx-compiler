@@ -95,12 +95,18 @@ public class SymbolCollector implements ASTVisitor{
         //build others
         it.wholeprogram.forEach(wd->{
             if (wd instanceof classDefNode) {
+                if(gScope.classScope.containsKey(((classDefNode) wd).name)||gScope.functionScope.containsKey(((classDefNode) wd).name)){
+                    throw new semanticError("duplicated class define", wd.pos);
+                }
                 globalScope classscope = new globalScope(gScope);
                 classscope.classname = ((classDefNode)wd).name;
                 gScope.addclass(pos, ((classDefNode)wd).name, classscope);
                 wd.accept(this);
             }
             else if(wd instanceof functiondefNode) {
+                if(gScope.classScope.containsKey(((functiondefNode) wd).functionName)||gScope.functionScope.containsKey(((functiondefNode) wd).functionName)){
+                    throw new semanticError("duplicated function define", wd.pos);
+                }
                 wd.accept(this);
             }
             else if(wd instanceof varDefNode) {
@@ -161,6 +167,9 @@ public class SymbolCollector implements ASTVisitor{
 
     @Override
     public void visit(varDefNode it) {
+        if(currentScope.members.containsKey(it.name)){
+            throw new semanticError("redefine of variable "+it.name, it.pos);
+        }
         int dim = 0;
         if(it.vartype instanceof arrayTypeNode) {
             dim = ((arrayTypeNode)it.vartype).dimension;
