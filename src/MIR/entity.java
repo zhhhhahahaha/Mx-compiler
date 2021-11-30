@@ -1,5 +1,5 @@
 package MIR;
 
-public class entity {
+abstract public class entity {
     
 }
