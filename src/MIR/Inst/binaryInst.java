@@ -1,23 +1,25 @@
 package MIR.Inst;
 
-import MIR.Entity.*;
 import MIR.Operand.*;
 import MIR.Type.*;
 
 public class binaryInst extends Inst{
     public enum binaryop{
-        xor,   //
-        add, sub
+        xor, and, or,
+        add, sub,
+        mul, div, srem,
+        shl, shr,
+
 
     }
     public binaryop op;
     public IRType sourcetype;
     public register leftsourcereg;
     public operand leftoperand;
-    boolean left_is_reg;
+    public boolean left_is_reg;
     public register rightsourcereg;
     public operand rightoperand;
-    boolean right_is_reg;
+    public boolean right_is_reg;
     public register resreg;
 
     public binaryInst(binaryop op, IRType sourcetype, register leftsourcereg, operand leftoperand, boolean left_is_reg,

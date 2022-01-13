@@ -1,6 +1,6 @@
 package MIR.Inst;
 
-import MIR.Entity.register;
+import MIR.Operand.register;
 import MIR.Operand.*;
 import MIR.Type.*;
 

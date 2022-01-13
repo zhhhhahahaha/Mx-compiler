@@ -1,7 +1,6 @@
 package MIR.Inst;
 
-import MIR.Entity.entity;
-import MIR.Entity.register;
+import MIR.Operand.register;
 import MIR.Type.IRType;
 
 public class allocaInst {

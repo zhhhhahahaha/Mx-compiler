@@ -1,6 +1,8 @@
-package MIR.Entity;
+package MIR.Operand;
 
-public class register extends entity{
+import MIR.Entity.entity;
+
+public class register extends operand {
     public String name;
 
     public register(String name){

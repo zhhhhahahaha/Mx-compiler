@@ -1,6 +1,7 @@
 package MIR.Inst;
 
 import MIR.Entity.*;
+import MIR.Operand.register;
 
 public class branchInst extends Inst{
     public label truedest;

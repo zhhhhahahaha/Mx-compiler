@@ -1,7 +1,8 @@
 package MIR;
 
 
-import MIR.Entity.*;
+import MIR.Operand.register;
+import MIR.Type.*;
 import Util.error.semanticError;
 import Util.position;
 
@@ -10,6 +11,7 @@ import java.util.HashMap;
 public class IRScope {
     public IRScope parentscope;
     public HashMap<String, register> varlist = new HashMap<>();
+    public HashMap<String, IRType> typelist = new HashMap<>();
     public enum ScopeType {Global, Class, Other};
     public ScopeType scopetype;
 
@@ -18,8 +20,8 @@ public class IRScope {
         this.scopetype = scopetype;
     }
 
-    public register findvar(String varname){
-        register retreg;
+    public register findvarreg(String varname){
+        register retreg = null;
         if(varlist.containsKey(varname)){
             retreg = varlist.get(varname);
             return retreg;
@@ -36,6 +38,27 @@ public class IRScope {
                 }
             }
         }
-        throw new semanticError("你IRScope写错了，没找到变量", new position(1,1));
+        return retreg;
+    }
+
+    public IRType findvartype(String varname){
+        IRType rettype = null;
+        if(typelist.containsKey(varname)){
+            rettype = typelist.get(varname);
+            return rettype;
+        }
+        else {
+            IRScope curScope = parentscope;
+            while(curScope!=null){
+                if(curScope.typelist.containsKey(varname)){
+                    rettype = curScope.typelist.get(varname);
+                    return rettype;
+                }
+                else{
+                    curScope = curScope.parentscope;
+                }
+            }
+        }
+        return rettype;
     }
 }

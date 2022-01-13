@@ -1,6 +1,5 @@
 package MIR.Inst;
 
-import MIR.Entity.*;
 import MIR.Operand.*;
 import MIR.Type.*;
 
