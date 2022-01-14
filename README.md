@@ -32,7 +32,6 @@
 		* arrayTypeNode
 		* varTypeNode
 	* voidTypeNode
-	* 
 * StmtNode
 	* blockStmtNode
 	* breakStmtNode
@@ -48,4 +47,3 @@
 * functiondefNode
 * functionParameterNode
 * varNode
-   

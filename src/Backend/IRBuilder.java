@@ -9,6 +9,7 @@ import MIR.Inst.*;
 import MIR.Module;
 import MIR.Operand.*;
 import MIR.Type.*;
+import org.antlr.v4.runtime.BailErrorStrategy;
 
 import java.util.ArrayList;
 
@@ -136,6 +137,88 @@ public class IRBuilder implements ASTVisitor {
             returnreg = getresreg;
         }
         return returnreg;
+    }
+
+    public void newarray(register target, ArrayList<ExprNode> exprlist, int beg, IRType basetype){
+        if(beg==exprlist.size()-1){
+            exprlist.get(beg).accept(this);
+            functioncallInst malloc = new functioncallInst(target, new arrayType(exprlist.size()-beg, basetype), "malloc");
+            parameter mpara = new parameter(null, new intType());
+            if(expr_value instanceof intConst) {
+                if (basetype instanceof boolType)
+                    mpara.parareg = new intConst(((intConst) expr_value).value);
+                else mpara.parareg = new intConst(((intConst) expr_value).value * 4);
+            }
+            malloc.paras.add(mpara);
+            curblock.instlist.add(malloc);
+        }
+        else{
+            IRType vtype = new intType();
+            regcount++;
+            register vreg = new register("%"+regcount);
+            allocaInst valloc = new allocaInst(vreg, vtype);
+            curfunc.allocalist.add(valloc);
+            curScope.varlist.put("i"+beg, vreg);
+            curScope.typelist.put("i"+beg, vtype);
+
+            exprlist.get(beg).accept(this);
+            storeInst varinit = new storeInst(vtype,null, new intConst(0), false, new pointType(vtype), vreg);
+            curblock.instlist.add(varinit);
+
+            functioncallInst malloc = new functioncallInst(target, new arrayType(exprlist.size()-beg, basetype), "malloc");
+            parameter mpara = new parameter(null, new intType());
+            if(expr_value instanceof intConst)
+                mpara.parareg = new intConst(((intConst) expr_value).value*4);
+            malloc.paras.add(mpara);
+            curblock.instlist.add(malloc);
+
+            curfunc.labelcount+=3;
+            BasicBlock condblock = new BasicBlock(new label(curfunc.labelcount-2));
+            BasicBlock stateblock = new BasicBlock(new label(curfunc.labelcount-1));
+            BasicBlock nextblock = new BasicBlock(new label(curfunc.labelcount));
+            branchInst tocond = new branchInst(condblock.block_label, null, false, null);
+            curblock.instlist.add(tocond);
+            curfunc.blocklist.add(curblock);
+
+            regcount++;
+            register cloadres = new register("%"+regcount);
+            loadInst cload = new loadInst(cloadres, new intType(), new pointType(new intType()), vreg);
+            condblock.instlist.add(cload);
+            regcount++;
+            register cmp = new register("%"+regcount);
+            icmpInst cond = new icmpInst(cmp, icmpInst.cmpType.slt, new intType(), cloadres, expr_value);
+            condblock.instlist.add(cond);
+            branchInst tostate = new branchInst(stateblock.block_label, nextblock.block_label, true, cmp);
+            condblock.instlist.add(tostate);
+            curfunc.blocklist.add(condblock);
+
+            regcount++;
+            register sloadres = new register("%"+regcount);
+            loadInst sload = new loadInst(sloadres, new intType(), new pointType(new intType()), vreg);
+            stateblock.instlist.add(sload);
+            regcount++;
+            register getres = new register("%"+regcount);
+            ArrayList<operand> index = new ArrayList<>();
+            index.add(sloadres);
+            getelementptrInst get = new getelementptrInst(getres, new arrayType(exprlist.size()-beg-1, basetype), target, malloc.returntype, index);
+            stateblock.instlist.add(get);
+            regcount++;
+            register newcreat = new register("%"+regcount);
+            newarray(newcreat, exprlist, beg+1, basetype);
+            storeInst ptrstore = new storeInst(new arrayType(exprlist.size()-beg-1, basetype), newcreat, null, true, new pointType(get.firsttype), getres);
+            stateblock.instlist.add(ptrstore);
+            regcount++;
+            register addres = new register("%"+regcount);
+            binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), sloadres, null, true, null, new intConst(-1), false, addres);
+            stateblock.instlist.add(add);
+            storeInst sstore = new storeInst(new intType(), addres, null, true, new pointType(new intType()), vreg);
+            stateblock.instlist.add(sstore);
+            branchInst backcond = new branchInst(condblock.block_label, null, false, null);
+            stateblock.instlist.add(backcond);
+            curfunc.blocklist.add(stateblock);
+
+            curblock = nextblock;
+        }
     }
 
     @Override
@@ -826,16 +909,10 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(arrayCreatorNode it){
-        for(int i = 0; i < it.exprlist.size(); i++){
-            it.exprlist.get(i).accept(this);
-            if((i+1)!=it.varType.dimension){
+        regcount++;
+        register resreg = new register("%"+regcount);
+        newarray(resreg, it.exprlist, 0, toIRType(it.varType));
 
-
-            }
-
-
-
-        }
     }
 
     @Override
@@ -850,10 +927,12 @@ public class IRBuilder implements ASTVisitor {
         }
         parameter mpara = new parameter(new intConst(classtype.size), new intType());
         malloc.paras.add(mpara);
+        curblock.instlist.add(malloc);
 
         functioncallInst call = new functioncallInst(null, new voidType(), it.varType.typename);
         parameter cpara = new parameter(mallocreg, new classType(classtype.name));
         call.paras.add(cpara);
+        curblock.instlist.add(call);
 
         expr_is_operand = false;
         exprtype = new classType(classtype.name);
