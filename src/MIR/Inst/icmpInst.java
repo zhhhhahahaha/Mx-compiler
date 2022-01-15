@@ -1,5 +1,6 @@
 package MIR.Inst;
 
+import MIR.IRVisitor;
 import MIR.Operand.*;
 import MIR.Type.*;
 
@@ -20,5 +21,10 @@ public class icmpInst extends Inst{
         this.sourcetype = sourcetype;
         this.left = left;
         this.right = right;
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

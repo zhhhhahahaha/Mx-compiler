@@ -1,5 +1,8 @@
 package MIR.Type;
 
-abstract public class IRType {
+import MIR.IRVisitor;
 
+
+abstract public class IRType {
+    abstract public void accept(IRVisitor visitor);
 }

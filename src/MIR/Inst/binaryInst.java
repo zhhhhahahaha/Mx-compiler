@@ -1,5 +1,6 @@
 package MIR.Inst;
 
+import MIR.IRVisitor;
 import MIR.Operand.*;
 import MIR.Type.*;
 
@@ -33,5 +34,10 @@ public class binaryInst extends Inst{
         this.rightoperand = rightoperand;
         this.right_is_reg = right_is_reg;
         this.resreg = resreg;
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

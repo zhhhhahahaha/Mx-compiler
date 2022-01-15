@@ -1,6 +1,7 @@
 package MIR.Inst;
 
 import MIR.Entity.*;
+import MIR.IRVisitor;
 import MIR.Operand.*;
 import MIR.Type.*;
 
@@ -16,5 +17,10 @@ public class functioncallInst extends Inst{
         this.resreg = resreg;
         this.returntype = returntype;
         this.functioname = functioname;
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

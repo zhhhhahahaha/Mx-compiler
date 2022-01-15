@@ -192,7 +192,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode>{
     @Override
     public ASTNode visitInit(MxParser.InitContext ctx) {
         if(ctx.vardef()!=null) {
-            return (varDefNode) visit(ctx.vardef());
+            return (varlistNode) visit(ctx.vardef());
         }
         else if(ctx.expression()!=null) {
             return (ExprNode) visit(ctx.expression());

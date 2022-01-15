@@ -1,5 +1,6 @@
 package MIR.Inst;
 
+import MIR.IRVisitor;
 import MIR.Operand.*;
 import MIR.Type.*;
 
@@ -18,5 +19,10 @@ public class storeInst extends Inst{
         this.fromreg = fromreg;
         this.restype = restype;
         this.resreg = resreg;
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

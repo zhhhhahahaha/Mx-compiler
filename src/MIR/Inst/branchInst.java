@@ -1,12 +1,13 @@
 package MIR.Inst;
 
 import MIR.Entity.*;
+import MIR.IRVisitor;
 import MIR.Operand.register;
 
 public class branchInst extends Inst{
     public label truedest;
     public label falsedest;
-    boolean hascondition;
+    public boolean hascondition;
     public register conreg;
 
 
@@ -16,5 +17,10 @@ public class branchInst extends Inst{
         this.falsedest = falsedest;
         this.hascondition = hascondition;
         this.conreg = conreg;
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

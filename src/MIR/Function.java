@@ -13,11 +13,14 @@ public class Function {
     public ArrayList<allocaInst> allocalist = new ArrayList<>();
     public ArrayList<BasicBlock> blocklist = new ArrayList<>();
     public ArrayList<parameter> paralist = new ArrayList<>();
-    public BasicBlock exitblock;
 
     public Function(String name, IRType rettype){
         this.rettype = rettype;
         this.name = name;
         this.labelcount = 0;
+    }
+
+    public void accept(IRVisitor visitor){
+        visitor.visit(this);
     }
 }

@@ -1,5 +1,6 @@
 package MIR.Inst;
 
+import MIR.IRVisitor;
 import MIR.Operand.*;
 import MIR.Type.*;
 
@@ -14,4 +15,8 @@ public class globalvarInst extends Inst{
         this.value = value;
     }
 
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
+    }
 }

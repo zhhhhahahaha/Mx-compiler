@@ -1,5 +1,6 @@
 package MIR.Inst;
 
+import MIR.IRVisitor;
 import MIR.Operand.*;
 import MIR.Type.*;
 
@@ -18,5 +19,10 @@ public class getelementptrInst extends Inst{
             this.sourcereg = sourcereg;
             this.sourcetype = sourcetype;
             this.indexlist = indexlist;
+      }
+
+      @Override
+      public void accept(IRVisitor visitor) {
+            visitor.visit(this);
       }
 }

@@ -9,7 +9,6 @@ import MIR.Inst.*;
 import MIR.Module;
 import MIR.Operand.*;
 import MIR.Type.*;
-import org.antlr.v4.runtime.BailErrorStrategy;
 
 import java.util.ArrayList;
 
@@ -28,8 +27,8 @@ public class IRBuilder implements ASTVisitor {
     public operand expr_value;
     public IRType exprtype;
 
-    public IRBuilder(){
-        module = new Module();
+    public IRBuilder(Module module){
+        this.module = module;
         curScope = new IRScope(null, IRScope.ScopeType.Global);
         curClass = null;
         curfunc = null;
@@ -90,7 +89,7 @@ public class IRBuilder implements ASTVisitor {
         }
         else if(it instanceof memberExprNode){
             ((memberExprNode) it).expr.accept(this);
-            register classres = new register("%"+regcount);
+            register classres = (register) expr_value;
 
             regcount++;
             register getres = new register("%"+regcount);
@@ -110,7 +109,7 @@ public class IRBuilder implements ASTVisitor {
         }
         else if(it instanceof indexExprNode){
             ((indexExprNode) it).idexpr.accept(this);
-            register sourcereg = new register("%"+regcount);
+            register sourcereg = (register) expr_value;
             IRType restype = null;
             IRType sourcetype = exprtype;
             if(exprtype instanceof arrayType){
@@ -124,12 +123,7 @@ public class IRBuilder implements ASTVisitor {
 
             ((indexExprNode) it).index.accept(this);
             ArrayList<operand> getindex = new ArrayList<>();
-            if(expr_is_operand){
-                getindex.add(expr_value);
-            }
-            else {
-                getindex.add(new register("%"+regcount));
-            }
+            getindex.add(expr_value);
             regcount++;
             register getresreg = new register("%"+regcount);
             getelementptrInst get = new getelementptrInst(getresreg, restype, sourcereg, sourcetype, getindex);
@@ -228,9 +222,11 @@ public class IRBuilder implements ASTVisitor {
         regcount = 0;
         it.wholeprogram.forEach(wp->{
             if(wp instanceof functiondefNode){
-                IRType rettype = toIRType(((functiondefNode) wp).returnType);
-                Function func = new Function(((functiondefNode) wp).functionName, rettype);
-                module.functionlist.add(func);
+                if(!(((functiondefNode) wp).functionName.equals("main"))){
+                    IRType rettype = toIRType(((functiondefNode) wp).returnType);
+                    Function func = new Function(((functiondefNode) wp).functionName, rettype);
+                    module.functionlist.add(func);
+                }
             }
             else if(wp instanceof classDefNode){
                 classType classtype = new classType(((classDefNode) wp).name);
@@ -277,7 +273,7 @@ public class IRBuilder implements ASTVisitor {
                     if(expr_is_operand)
                         store.sourceop = expr_value;
                     else {
-                        store.sourcereg = new register("%"+regcount);
+                        store.sourcereg = (register) expr_value;
                         store.fromreg = true;
                     }
                     curblock.instlist.add(store);
@@ -294,7 +290,7 @@ public class IRBuilder implements ASTVisitor {
                 else
                     newScope.scopetype = IRScope.ScopeType.Class;
                 curScope = newScope;
-                it.accept(this);
+                wp.accept(this);
                 curScope = newScope.parentscope;
             }
         });
@@ -365,8 +361,11 @@ public class IRBuilder implements ASTVisitor {
                     curfunc = module.functionlist.get(i);
             }
         }
+        if(it.functionName.equals("main"))
+            curfunc = module.mainfunc;
         curblock = new BasicBlock(new label(0));
-        regcount += it.parameter.paras.size();
+        if(it.parameter!=null)
+            regcount += it.parameter.paras.size();
         if(curScope.parentscope.scopetype == IRScope.ScopeType.Class) {
             regcount++;
             register thisreg = new register("%"+regcount);
@@ -385,24 +384,26 @@ public class IRBuilder implements ASTVisitor {
             storeInst thisstore = new storeInst(thistype, parareg, null, true, thispoint, thisreg);
             curblock.instlist.add(thisstore);
         }
-        for(int i = 1; i<=it.parameter.paras.size();i++){
-            varNode vn = it.parameter.paras.get(i);
-            regcount++;
-            register varreg = new register("%"+regcount);
-            curScope.varlist.put(vn.parametername, varreg);
-            IRType vntype = toIRType(vn.typename);
-            curScope.typelist.put(vn.parametername, vntype);
+        if(it.parameter!=null) {
+            for (int i = 1; i <= it.parameter.paras.size(); i++) {
+                varNode vn = it.parameter.paras.get(i);
+                regcount++;
+                register varreg = new register("%" + regcount);
+                curScope.varlist.put(vn.parametername, varreg);
+                IRType vntype = toIRType(vn.typename);
+                curScope.typelist.put(vn.parametername, vntype);
 
-            register parareg = new register("%"+i);
-            parameter para = new parameter(parareg, vntype);
-            curfunc.paralist.add(para);
+                register parareg = new register("%" + i);
+                parameter para = new parameter(parareg, vntype);
+                curfunc.paralist.add(para);
 
-            allocaInst varalloc = new allocaInst(varreg, vntype);
-            curfunc.allocalist.add(varalloc);
+                allocaInst varalloc = new allocaInst(varreg, vntype);
+                curfunc.allocalist.add(varalloc);
 
-            pointType varpoint = new pointType(vntype);
-            storeInst varstore = new storeInst(vntype, parareg, null, true, varpoint, varreg);
-            curblock.instlist.add(varstore);
+                pointType varpoint = new pointType(vntype);
+                storeInst varstore = new storeInst(vntype, parareg, null, true, varpoint, varreg);
+                curblock.instlist.add(varstore);
+            }
         }
         it.block.accept(this);
         curfunc.blocklist.add(curblock);
@@ -421,7 +422,7 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(indexExprNode it){//对于自定义的类存的是指向类的指针，对于其他存的是变量的值
         it.idexpr.accept(this);
-        register sourcereg = new register("%"+regcount);
+        register sourcereg = (register) expr_value;
         IRType restype = null;
         IRType sourcetype = exprtype;
         if(exprtype instanceof arrayType){
@@ -435,12 +436,7 @@ public class IRBuilder implements ASTVisitor {
 
         it.index.accept(this);
         ArrayList<operand> getindex = new ArrayList<>();
-        if(expr_is_operand){
-            getindex.add(expr_value);
-        }
-        else {
-            getindex.add(new register("%"+regcount));
-        }
+        getindex.add(expr_value);
         regcount++;
         register getresreg = new register("%"+regcount);
         getelementptrInst get = new getelementptrInst(getresreg, restype, sourcereg, sourcetype, getindex);
@@ -453,6 +449,7 @@ public class IRBuilder implements ASTVisitor {
 
         exprtype = restype;
         expr_is_operand = false;
+        expr_value = loadres;
     }
 
     @Override
@@ -460,13 +457,15 @@ public class IRBuilder implements ASTVisitor {
         it.rhs.accept(this);
         switch (it.prefixOp){
             case lon:
-                register lonleftreg = new register("%"+regcount);
+                register lonleftreg = (register) expr_value;
                 regcount++;
                 register lonresreg = new register("%"+regcount);
                 binaryInst lonxorinst = new binaryInst(binaryInst.binaryop.xor, new boolType(), lonleftreg, null, true, null, new boolConst(true), false, lonresreg);
                 curblock.instlist.add(lonxorinst);
+
                 expr_is_operand = false;
                 exprtype = new boolType();
+                expr_value = lonresreg;
                 break;
             case til:
                 if(expr_is_operand){
@@ -476,50 +475,46 @@ public class IRBuilder implements ASTVisitor {
                     }
                 }
                 else {
-                    register tilleftreg = new register("%"+regcount);
+                    register tilleftreg = (register) expr_value;
                     regcount++;
                     register tilresreg = new register("%" + regcount);
                     binaryInst tilxorinst = new binaryInst(binaryInst.binaryop.xor, new intType(), tilleftreg, null, true, null, new intConst(-1), false, tilresreg);
                     curblock.instlist.add(tilxorinst);
+
                     expr_is_operand = false;
                     exprtype = new intType();
+                    expr_value = tilresreg;
                 }
                 break;
             case dop:
                 register doploadid = findvarptr(it.rhs);
 
                 regcount++;
-                register doploadres = new register("%"+regcount);
-                loadInst dopload = new loadInst(doploadres, new intType(), new pointType(new intType()), doploadid);
-                curblock.instlist.add(dopload);
-
-                regcount++;
                 register dopaddres = new register("%"+regcount);
-                binaryInst dopadd = new binaryInst(binaryInst.binaryop.add, new intType(), doploadres, null, true, null, new intConst(1), false, dopaddres);
+                binaryInst dopadd = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, dopaddres);
                 curblock.instlist.add(dopadd);
 
                 storeInst dopstore = new storeInst(new intType(), dopaddres, null, true, new pointType(new intType()), doploadid);
                 curblock.instlist.add(dopstore);
+
                 expr_is_operand = false;
                 exprtype = new intType();
+                expr_value = dopaddres;
                 break;
             case dom:
                 register domloadid = findvarptr(it.rhs);
 
                 regcount++;
-                register domloadres = new register("%"+regcount);
-                loadInst domload = new loadInst(domloadres, new intType(), new pointType(new intType()), domloadid);
-                curblock.instlist.add(domload);
-
-                regcount++;
                 register domsubres = new register("%"+regcount);
-                binaryInst domsub = new binaryInst(binaryInst.binaryop.sub, new intType(), domloadres, null, true, null, new intConst(1), false, domsubres);
+                binaryInst domsub = new binaryInst(binaryInst.binaryop.sub, new intType(), (register) expr_value, null, true, null, new intConst(1), false, domsubres);
                 curblock.instlist.add(domsub);
 
                 storeInst domstore = new storeInst(new intType(), domsubres, null, true, new pointType(new intType()), domloadid);
                 curblock.instlist.add(domstore);
+
                 expr_is_operand = false;
                 exprtype = new intType();
+                expr_value = domsubres;
                 break;
             case plu:
                 break;
@@ -533,10 +528,12 @@ public class IRBuilder implements ASTVisitor {
                 else{
                     regcount++;
                     register minres = new register("%"+regcount);
-                    binaryInst min = new binaryInst(binaryInst.binaryop.sub, new intType(), null, new intConst(0), false, new register("%"+(regcount-1)), null, true, minres);
+                    binaryInst min = new binaryInst(binaryInst.binaryop.sub, new intType(), null, new intConst(0), false, (register) expr_value, null, true, minres);
                     curblock.instlist.add(min);
+
                     expr_is_operand = false;
                     exprtype = new intType();
+                    expr_value = minres;
                 }
                 break;
         }
@@ -552,15 +549,12 @@ public class IRBuilder implements ASTVisitor {
                     func = module.functionlist.get(i);
         }
         functioncallInst call = new functioncallInst(null, func.rettype, func.name);
-        parameter thispara = new parameter(new register("%"+regcount), exprtype);
+        parameter thispara = new parameter((register) expr_value, exprtype);
         call.paras.add(thispara);
         it.exprlist.exprlist.forEach(ep->{
             ep.accept(this);
             parameter para = new parameter(null, exprtype);
-            if(expr_is_operand)
-                para.parareg = expr_value;
-            else
-                para.parareg = new register("%"+regcount);
+            para.parareg = expr_value;
             call.paras.add(para);
         });
         regcount++;
@@ -569,6 +563,7 @@ public class IRBuilder implements ASTVisitor {
 
         exprtype = func.rettype;
         expr_is_operand = false;
+        expr_value = resreg;
     }
 
     @Override
@@ -578,33 +573,32 @@ public class IRBuilder implements ASTVisitor {
             case dop:
                 register doploadid = findvarptr(it.lhs);
 
-                regcount+=2;
-                register doploadres = new register("%"+regcount);
-                loadInst dopload = new loadInst(doploadres, new intType(), new pointType(new intType()), doploadid);
-                curblock.instlist.add(dopload);
-
-                register dopaddres = new register("%"+(regcount-1));
-                binaryInst dopadd = new binaryInst(binaryInst.binaryop.add, new intType(), doploadres, null, true, null, new intConst(1), false, dopaddres);
+                regcount++;
+                register dopaddres = new register("%"+regcount);
+                binaryInst dopadd = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, dopaddres);
                 curblock.instlist.add(dopadd);
 
                 storeInst dopstore = new storeInst(new intType(), dopaddres, null, true, new pointType(new intType()), doploadid);
                 curblock.instlist.add(dopstore);
+
                 expr_is_operand = false;
                 exprtype = new intType();
+                //expr_value不变
                 break;
             case dom:
                 register domloadid = findvarptr(it.lhs);
 
-                regcount+=2;
-                register domloadres = new register("%"+regcount);
-                loadInst domload = new loadInst(domloadres, new intType(), new pointType(new intType()), domloadid);
-                curblock.instlist.add(domload);
-
-                register domsubres = new register("%"+(regcount-1));
-                binaryInst domsub = new binaryInst(binaryInst.binaryop.sub, new intType(), domloadres, null, true, null, new intConst(1), false, domsubres);
+                regcount++;
+                register domsubres = new register("%"+regcount);
+                binaryInst domsub = new binaryInst(binaryInst.binaryop.sub, new intType(), (register) expr_value, null, true, null, new intConst(1), false, domsubres);
                 curblock.instlist.add(domsub);
+
+                storeInst domstore = new storeInst(new intType(), domsubres, null, true, new pointType(new intType()), domloadid);
+                curblock.instlist.add(domstore);
+
                 expr_is_operand = false;
                 exprtype = new intType();
+                //expr_value不变
                 break;
         }
     }
@@ -612,7 +606,7 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(memberExprNode it){
         it.expr.accept(this);
-        register classres = new register("%"+regcount);
+        register classres = (register) expr_value;
 
         regcount++;
         register getres = new register("%"+regcount);
@@ -637,26 +631,17 @@ public class IRBuilder implements ASTVisitor {
 
         exprtype = membertype;
         expr_is_operand = false;
+        expr_value = memberres;
     }
 
     @Override
     public void visit(binaryExprNode it){
         operand leftop = null, rightop = null;
         it.lhs.accept(this);
-        if(expr_is_operand){
-            leftop = expr_value;
-        }
-        else{
-            leftop = new register("%"+regcount);
-        }
+        leftop = expr_value;
         it.rhs.accept(this);
-        if(expr_is_operand){
-            rightop = expr_value;
-        }
-        else{
-            rightop = new register("%"+regcount);
-        }
-        if(leftop instanceof operand && rightop instanceof operand){
+        rightop = expr_value;
+        if(!(leftop instanceof register) && !(rightop instanceof register)){
             expr_is_operand = true;
             switch (it.opCode){
                 case mul:
@@ -889,6 +874,7 @@ public class IRBuilder implements ASTVisitor {
                     break;
             }
             expr_is_operand = false;
+            expr_value = res;
         }
     }
 
@@ -902,9 +888,14 @@ public class IRBuilder implements ASTVisitor {
         if(expr_is_operand)
             store.sourceop = expr_value;
         else {
-            store.resreg = new register("%"+regcount);
+            store.sourcereg = (register) expr_value;
             store.fromreg = true;
         }
+        curblock.instlist.add(store);
+
+        expr_is_operand = false;
+        exprtype = null;
+        expr_value = null;
     }
 
     @Override
@@ -913,6 +904,9 @@ public class IRBuilder implements ASTVisitor {
         register resreg = new register("%"+regcount);
         newarray(resreg, it.exprlist, 0, toIRType(it.varType));
 
+        exprtype = toIRType(it.varType);
+        expr_is_operand = false;
+        expr_value = resreg;
     }
 
     @Override
@@ -936,6 +930,7 @@ public class IRBuilder implements ASTVisitor {
 
         expr_is_operand = false;
         exprtype = new classType(classtype.name);
+        expr_value = mallocreg;
     }
 
     @Override
@@ -952,10 +947,7 @@ public class IRBuilder implements ASTVisitor {
         it.exprlist.exprlist.forEach(ep->{
             ep.accept(this);
             parameter para = new parameter(null, exprtype);
-            if(expr_is_operand)
-                para.parareg = expr_value;
-            else
-                para.parareg = new register("%"+regcount);
+            para.parareg = expr_value;
             call.paras.add(para);
         });
         if(!(func.rettype instanceof voidType)){
@@ -966,6 +958,7 @@ public class IRBuilder implements ASTVisitor {
 
         exprtype = func.rettype;
         expr_is_operand = false;
+        expr_value = call.resreg;
     }
 
     @Override
@@ -1147,14 +1140,14 @@ public class IRBuilder implements ASTVisitor {
             curblock.instlist.add(ret);
         }
         else{
-            expr_is_operand = false;
+            it.value.accept(this);
             retInst ret = new retInst(curfunc.rettype, null, null, false );
             if(expr_is_operand){
                 ret.ret_is_operand = true;
                 ret.retval = expr_value;
             }
             else{
-                ret.retreg = new register("%"+regcount);
+                ret.retreg = (register) expr_value;
             }
             curblock.instlist.add(ret);
             expr_is_operand = false;
@@ -1195,13 +1188,13 @@ public class IRBuilder implements ASTVisitor {
 
         expr_is_operand = false;
         if(it.init!=null)
-        it.init.accept(this);
+            it.init.accept(this);
         storeInst varinit = new storeInst(vtype, null, null, false, new pointType(vtype), vreg);
         if(expr_is_operand){
             varinit.sourceop = expr_value;
         }
         else{
-            varinit.sourcereg = new register("%"+regcount);
+            varinit.sourcereg = (register) expr_value;
             varinit.fromreg = true;
         }
         curblock.instlist.add(varinit);
@@ -1217,12 +1210,15 @@ public class IRBuilder implements ASTVisitor {
     public void visit(literalNode it){
         if(it.literal.equals("null")){
             expr_value = new nullConst();
+            exprtype = new nullType();
         }
         else if(it.literal.equals("true")){
             expr_value = new boolConst(true);
+            exprtype = new boolType();
         }
         else{//literal是false的情况
             expr_value = new boolConst(false);
+            exprtype = new boolType();
         }
         expr_is_operand=true;
     }
@@ -1255,6 +1251,7 @@ public class IRBuilder implements ASTVisitor {
 
         exprtype = idtype;
         expr_is_operand = false;
+        expr_value = loadres;
     }
 
     @Override
@@ -1269,10 +1266,12 @@ public class IRBuilder implements ASTVisitor {
         }
         expr_value = new intConst(value);
         expr_is_operand = true;
+        exprtype = new intType();
     }
 
     @Override
     public void visit(stringNode it){
+
 
     }
     @Override
@@ -1286,6 +1285,7 @@ public class IRBuilder implements ASTVisitor {
 
         expr_is_operand = false;
         exprtype = restype;
+        expr_value = loadres;
     }
 
 }

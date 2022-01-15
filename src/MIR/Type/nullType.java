@@ -4,12 +4,7 @@ import MIR.IRVisitor;
 
 import java.io.PrintStream;
 
-public class boolType extends IRType{
-    public int size;
-
-    public boolType(){
-        size = 8;
-    }
+public class nullType extends IRType{
 
     @Override
     public void accept(IRVisitor visitor) {

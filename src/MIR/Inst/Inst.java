@@ -1,5 +1,7 @@
 package MIR.Inst;
 
-abstract public class Inst {
+import MIR.IRVisitor;
 
+abstract public class Inst {
+    abstract public void accept(IRVisitor visitor);
 }

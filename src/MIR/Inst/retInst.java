@@ -1,5 +1,6 @@
 package MIR.Inst;
 
+import MIR.IRVisitor;
 import MIR.Operand.register;
 import MIR.Operand.*;
 import MIR.Type.*;
@@ -17,4 +18,8 @@ public class retInst extends Inst{
         this.ret_is_operand = ret_is_operand;
     }
 
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
+    }
 }

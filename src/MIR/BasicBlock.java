@@ -13,4 +13,8 @@ public class BasicBlock {
     public BasicBlock(label block_label){
         this.block_label = block_label;
     }
+
+    public void accept(IRVisitor visitor){
+        visitor.visit(this);
+    }
 }

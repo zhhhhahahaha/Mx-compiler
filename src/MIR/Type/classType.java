@@ -1,6 +1,9 @@
 package MIR.Type;
 
 
+import MIR.IRVisitor;
+
+import java.io.PrintStream;
 import java.util.HashMap;
 
 //放在module里的classtype是存有全部的typelist和typenumlis的信息的
@@ -24,5 +27,10 @@ public class classType extends IRType{
         else{
             size+=4;
         }
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }
