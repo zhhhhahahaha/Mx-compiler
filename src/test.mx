@@ -1,9 +1,13 @@
 
+int foo(int a) {
+    return a;
+}
 
-int a = 1;
+int a = 0;
 
 int main(){
+    int b = 2;
+    b = foo(b);
 
-
-   return 0;
+    return 0;
 }

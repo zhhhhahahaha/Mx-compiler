@@ -21,6 +21,7 @@ public class IRBuilder implements ASTVisitor {
     public BasicBlock curblock; //实际上很多时候是next block
 
     public int regcount;//用于在每个函数内部数寄存器以方便给寄存器命名
+    public int strcount;//用于数有多少个字符串常量
     public label forcontinue;
     public label forbreak;
     public boolean expr_is_operand;
@@ -34,6 +35,7 @@ public class IRBuilder implements ASTVisitor {
         curfunc = null;
         curblock = null;
         regcount = 0;
+        strcount = 0;
     }
     public IRType toIRType(typeNode it){
         if(it instanceof varTypeNode){
@@ -139,9 +141,7 @@ public class IRBuilder implements ASTVisitor {
             functioncallInst malloc = new functioncallInst(target, new arrayType(exprlist.size()-beg, basetype), "malloc");
             parameter mpara = new parameter(null, new intType());
             if(expr_value instanceof intConst) {
-                if (basetype instanceof boolType)
-                    mpara.parareg = new intConst(((intConst) expr_value).value);
-                else mpara.parareg = new intConst(((intConst) expr_value).value * 4);
+                mpara.parareg = new intConst(((intConst) expr_value).value * 4);
             }
             malloc.paras.add(mpara);
             curblock.instlist.add(malloc);
@@ -256,7 +256,7 @@ public class IRBuilder implements ASTVisitor {
                     curScope.typelist.put(vd.name, vartype);
                     globalvarInst gvar = new globalvarInst(varreg, vartype, null);
                     if(vartype instanceof boolType){
-                        gvar.value = new boolConst(true);
+                        gvar.value = new boolConst(false);
                     }
                     else{
                         gvar.value = new intConst(0);
@@ -385,7 +385,7 @@ public class IRBuilder implements ASTVisitor {
             curblock.instlist.add(thisstore);
         }
         if(it.parameter!=null) {
-            for (int i = 1; i <= it.parameter.paras.size(); i++) {
+            for (int i = 0; i < it.parameter.paras.size(); i++) {
                 varNode vn = it.parameter.paras.get(i);
                 regcount++;
                 register varreg = new register("%" + regcount);
@@ -393,7 +393,7 @@ public class IRBuilder implements ASTVisitor {
                 IRType vntype = toIRType(vn.typename);
                 curScope.typelist.put(vn.parametername, vntype);
 
-                register parareg = new register("%" + i);
+                register parareg = new register("%" + (i+1));
                 parameter para = new parameter(parareg, vntype);
                 curfunc.paralist.add(para);
 
@@ -544,9 +544,15 @@ public class IRBuilder implements ASTVisitor {
         it.expr.accept(this);
         Function func = null;
         for(int i = 0; i < module.functionlist.size(); i++){
-            if(exprtype instanceof classType)
-                if(module.functionlist.get(i).name.equals(((classType) exprtype).name+"."+it.id))
+            if(exprtype instanceof classType) {
+                if (module.functionlist.get(i).name.equals(((classType) exprtype).name + "." + it.id))
                     func = module.functionlist.get(i);
+            }
+            else if(exprtype instanceof stringType){
+                if(module.functionlist.get(i).name.equals("string."+it.id))
+                    func = module.functionlist.get(i);
+            }
+
         }
         functioncallInst call = new functioncallInst(null, func.rettype, func.name);
         parameter thispara = new parameter((register) expr_value, exprtype);
@@ -661,7 +667,7 @@ public class IRBuilder implements ASTVisitor {
                     break;
                 case add:
                     if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value+((intConst) rightop).value);
+                        expr_value = new intConst(((intConst) leftop).value + ((intConst) rightop).value);
                     exprtype = new intType();
                     break;
                 case sub:
@@ -766,6 +772,61 @@ public class IRBuilder implements ASTVisitor {
                     break;
             }
         }
+        else if(exprtype instanceof stringType){
+            if(it.opCode == binaryExprNode.binaryOpType.add){
+                regcount++;
+                register catres = new register("%"+regcount);
+                functioncallInst strcat = new functioncallInst(catres, new stringType(), "strcat");
+                parameter lpara = new parameter(leftop, new stringType());
+                parameter rpara = new parameter(rightop, new stringType());
+                strcat.paras.add(lpara);
+                strcat.paras.add(rpara);
+                curblock.instlist.add(strcat);
+
+                exprtype = new stringType();
+                expr_value = catres;
+                expr_is_operand = false;
+            }
+            else{
+                regcount++;
+                register strcmpres = new register("%"+regcount);
+                functioncallInst strcmp = new functioncallInst(strcmpres, new intType(), "strcmp");
+                parameter lpara = new parameter(leftop, new stringType());
+                parameter rpara = new parameter(rightop, new stringType());
+                strcmp.paras.add(lpara);
+                strcmp.paras.add(rpara);
+                curblock.instlist.add(strcmp);
+
+                regcount++;
+                register icmpres = new register("%"+regcount);
+                icmpInst icm = new icmpInst(icmpres, null, new intType(), strcmpres, new intConst(0));
+                switch (it.opCode){
+                    case les:
+                        icm.cmptype = icmpInst.cmpType.slt;
+                        break;
+                    case loe:
+                        icm.cmptype = icmpInst.cmpType.sle;
+                        break;
+                    case gre:
+                        icm.cmptype = icmpInst.cmpType.sgt;
+                        break;
+                    case goe:
+                        icm.cmptype = icmpInst.cmpType.sge;
+                        break;
+                    case eq:
+                        icm.cmptype = icmpInst.cmpType.eq;
+                        break;
+                    case neq:
+                        icm.cmptype = icmpInst.cmpType.ne;
+                        break;
+                }
+                curblock.instlist.add(icm);
+                exprtype = new boolType();
+                expr_value = icmpres;
+                expr_is_operand = false;
+            }
+
+        }
         else{
             regcount++;
             register res = new register("%"+regcount);
@@ -777,7 +838,7 @@ public class IRBuilder implements ASTVisitor {
             if(rightop instanceof register){
                 bin.rightsourcereg = (register) rightop;
                 bin.right_is_reg = true;
-            }else bin.right_is_reg = true;
+            }else bin.rightoperand = rightop;
 
             icmpInst icm = new icmpInst(res, null, exprtype, leftop, rightop);
 
@@ -1271,8 +1332,14 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(stringNode it){
+        strcount++;
+        register str = new register("@str"+strcount);
+        globalvarInst gbstring = new globalvarInst(str, new stringType(), new stringConst(it.string));
+        module.globalvarlist.add(gbstring);
 
-
+        exprtype = new stringType();
+        expr_value = str;
+        expr_is_operand = false;
     }
     @Override
     public void visit(thisNode it){

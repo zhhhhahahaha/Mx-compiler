@@ -104,7 +104,9 @@ public class IRPrinter implements IRVisitor{
     }
 
     @Override
-    public void visit(stringType it){}
+    public void visit(stringType it){
+        ps.print("string");
+    }
 
     @Override
     public void visit(voidType it){
@@ -134,6 +136,11 @@ public class IRPrinter implements IRVisitor{
     @Override
     public void visit(register it){
         ps.print(it.name);
+    }
+
+    @Override
+    public void visit(stringConst it){
+        ps.print(it.strconst);
     }
 
     @Override
@@ -260,7 +267,7 @@ public class IRPrinter implements IRVisitor{
         else{
             it.rettype.accept(this);
             ps.print(" ");
-            it.retval.accept(this);
+            it.retreg.accept(this);
         }
         ps.println();
     }

@@ -23,6 +23,7 @@ public interface IRVisitor {
     void visit(intConst it);
     void visit(nullConst it);
     void visit(register it);
+    void visit(stringConst it);
 
     void visit(allocaInst it);
     void visit(binaryInst it);

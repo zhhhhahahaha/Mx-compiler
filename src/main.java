@@ -2,6 +2,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 
+import ASM.*;
+import Backend.ASMBuilder;
+import Backend.ASMPrinter;
 import Backend.IRBuilder;
 import Frontend.ASTBuilder;
 import Frontend.SemanticChecker;
@@ -49,6 +52,10 @@ public class main {
             Module topmodule = new Module();
             new IRBuilder(topmodule).visit(ASTRoot);
             new IRPrinter(output).visit(topmodule);
+
+            ASMmodule ASMtopmodule = new ASMmodule();
+            new ASMBuilder(ASMtopmodule).visit(topmodule);
+            new ASMPrinter(output).visit(ASMtopmodule);
 
         } catch (Error er){
             System.err.println(er.toString());

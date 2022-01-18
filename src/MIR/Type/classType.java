@@ -21,12 +21,7 @@ public class classType extends IRType{
         this.number = 0;
     }
     public void addsize(IRType it){
-        if(it instanceof boolType){
-            size+=1;
-        }
-        else{
-            size+=4;
-        }
+        size+=4;
     }
 
     @Override

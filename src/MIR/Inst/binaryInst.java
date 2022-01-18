@@ -10,8 +10,6 @@ public class binaryInst extends Inst{
         add, sub,
         mul, div, srem,
         shl, shr,
-
-
     }
     public binaryop op;
     public IRType sourcetype;
