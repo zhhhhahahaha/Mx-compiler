@@ -28,6 +28,8 @@ public class IRBuilder implements ASTVisitor {
     public operand expr_value;
     public IRType exprtype;
 
+    public String arrayname; //用于开存放数组大小变量时的数组名字确定
+
     public IRBuilder(Module module){
         this.module = module;
         curScope = new IRScope(null, IRScope.ScopeType.Global);
@@ -219,6 +221,7 @@ public class IRBuilder implements ASTVisitor {
     public void visit(FileNode it){
         BasicBlock globalinit = new BasicBlock(new label(0));
         curblock = globalinit;
+        curfunc = module.globalinit;
         regcount = 0;
         it.wholeprogram.forEach(wp->{
             if(wp instanceof functiondefNode){
@@ -268,19 +271,26 @@ public class IRBuilder implements ASTVisitor {
                     loadInst load = new loadInst(loadres, vartype, new pointType(vartype), varreg);
                     curblock.instlist.add(load);
 
-                    vd.init.accept(this);
-                    storeInst store = new storeInst(vartype, null, null, false, new pointType(vartype), varreg);
-                    if(expr_is_operand)
-                        store.sourceop = expr_value;
-                    else {
-                        store.sourcereg = (register) expr_value;
-                        store.fromreg = true;
+                    if(vd.init!=null) {
+                        if(vartype instanceof arrayType){
+                            arrayname = vd.name;
+                        }
+                        vd.init.accept(this);
+                        storeInst store = new storeInst(vartype, null, null, false, new pointType(vartype), varreg);
+                        if (expr_is_operand)
+                            store.sourceop = expr_value;
+                        else {
+                            store.sourcereg = (register) expr_value;
+                            store.fromreg = true;
+                        }
+                        curblock.instlist.add(store);
                     }
-                    curblock.instlist.add(store);
                 });
             }
         });
         module.globalinit.blocklist.add(globalinit);
+        curblock = null;
+        curfunc = null;
 
         it.wholeprogram.forEach(wp->{
             if(!(wp instanceof varlistNode)){
@@ -549,10 +559,21 @@ public class IRBuilder implements ASTVisitor {
                     func = module.functionlist.get(i);
             }
             else if(exprtype instanceof stringType){
-                if(module.functionlist.get(i).name.equals("string."+it.id))
+                if(module.functionlist.get(i).name.equals("string_"+it.id))
                     func = module.functionlist.get(i);
             }
+            else if(exprtype instanceof arrayType){
+                register sizereg = curScope.findvarreg(((idNode)it.expr).id + "_size");
+                regcount++;
+                register loadres = new register("%"+regcount);
+                loadInst load = new loadInst(loadres, new intType(), new pointType(new intType()), sizereg);
+                curblock.instlist.add(load);
 
+                exprtype = new intType();
+                expr_is_operand = false;
+                expr_value = loadres;
+                return;
+            }
         }
         functioncallInst call = new functioncallInst(null, func.rettype, func.name);
         parameter thispara = new parameter((register) expr_value, exprtype);
@@ -776,7 +797,7 @@ public class IRBuilder implements ASTVisitor {
             if(it.opCode == binaryExprNode.binaryOpType.add){
                 regcount++;
                 register catres = new register("%"+regcount);
-                functioncallInst strcat = new functioncallInst(catres, new stringType(), "strcat");
+                functioncallInst strcat = new functioncallInst(catres, new stringType(), "string_add");
                 parameter lpara = new parameter(leftop, new stringType());
                 parameter rpara = new parameter(rightop, new stringType());
                 strcat.paras.add(lpara);
@@ -942,10 +963,11 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(assignExprNode it){
         register leftreg = findvarptr(it.lhs);
-        storeInst store = new storeInst(null, null, null, false, new pointType(exprtype), leftreg);
+        storeInst store = new storeInst(null, null, null, false, null, leftreg);
 
         it.rhs.accept(this);
         store.sourcetype = exprtype;
+        store.restype = new pointType(exprtype);
         if(expr_is_operand)
             store.sourceop = expr_value;
         else {
@@ -964,6 +986,27 @@ public class IRBuilder implements ASTVisitor {
         regcount++;
         register resreg = new register("%"+regcount);
         newarray(resreg, it.exprlist, 0, toIRType(it.varType));
+
+        if(curScope.scopetype!=IRScope.ScopeType.Global) {
+            regcount++;
+            register sizeres = new register("%" + regcount);
+            allocaInst allocsize = new allocaInst(sizeres, new intType());
+            curfunc.allocalist.add(allocsize);
+            curScope.varlist.put(arrayname + "_size", sizeres);
+            curScope.typelist.put(arrayname + "_size", new intType());
+
+            it.exprlist.get(0).accept(this);
+            storeInst store = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), sizeres);
+            curblock.instlist.add(store);
+        }
+        else{
+            register varreg = new register("@"+arrayname+"_size");
+            curScope.varlist.put(arrayname+"_size", varreg);
+            curScope.typelist.put(arrayname+"_size", new intType());
+            it.exprlist.get(0).accept(this);
+            globalvarInst gvar = new globalvarInst(varreg, new intType(), expr_value);
+            module.globalvarlist.add(gvar);
+        }
 
         exprtype = toIRType(it.varType);
         expr_is_operand = false;
@@ -1005,17 +1048,19 @@ public class IRBuilder implements ASTVisitor {
                 func = module.functionlist.get(i);
         }
         functioncallInst call = new functioncallInst(null, func.rettype, it.id);
-        it.exprlist.exprlist.forEach(ep->{
-            ep.accept(this);
-            parameter para = new parameter(null, exprtype);
-            para.parareg = expr_value;
-            call.paras.add(para);
-        });
+        if(it.exprlist!=null)
+            it.exprlist.exprlist.forEach(ep->{
+                ep.accept(this);
+                parameter para = new parameter(null, exprtype);
+                para.parareg = expr_value;
+                call.paras.add(para);
+            });
         if(!(func.rettype instanceof voidType)){
             regcount++;
             register resreg = new register("%" + regcount);
             call.resreg = resreg;
         }
+        curblock.instlist.add(call);
 
         exprtype = func.rettype;
         expr_is_operand = false;
@@ -1248,17 +1293,20 @@ public class IRBuilder implements ASTVisitor {
         curScope.typelist.put(it.name, vtype);
 
         expr_is_operand = false;
-        if(it.init!=null)
+        if(it.init!=null) {
+            if(vtype instanceof arrayType){
+                arrayname = it.name;
+            }
             it.init.accept(this);
-        storeInst varinit = new storeInst(vtype, null, null, false, new pointType(vtype), vreg);
-        if(expr_is_operand){
-            varinit.sourceop = expr_value;
+            storeInst varinit = new storeInst(vtype, null, null, false, new pointType(vtype), vreg);
+            if (expr_is_operand) {
+                varinit.sourceop = expr_value;
+            } else {
+                varinit.sourcereg = (register) expr_value;
+                varinit.fromreg = true;
+            }
+            curblock.instlist.add(varinit);
         }
-        else{
-            varinit.sourcereg = (register) expr_value;
-            varinit.fromreg = true;
-        }
-        curblock.instlist.add(varinit);
         expr_is_operand = false;
     }
 
@@ -1333,7 +1381,7 @@ public class IRBuilder implements ASTVisitor {
     @Override
     public void visit(stringNode it){
         strcount++;
-        register str = new register("@str"+strcount);
+        register str = new register("$str"+strcount);
         globalvarInst gbstring = new globalvarInst(str, new stringType(), new stringConst(it.string));
         module.globalvarlist.add(gbstring);
 

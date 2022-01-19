@@ -17,17 +17,17 @@ public class ASMPrinter implements ASMVisitor {
     public void visit(ASMmodule it){
         ps.println("\t.text");
         ps.println();
-        it.datalist.forEach(dl->{
-            dl.accept(this);
-        });
         it.funclist.forEach(fl->{
             fl.accept(this);
+        });
+        it.datalist.forEach(dl->{
+            dl.accept(this);
         });
     }
 
     @Override
     public void visit(ASMfunction it){
-        ps.println("\t.global  "+it.name);
+        ps.println("\t.globl  "+it.name);
         ps.println("\t.p2align  2");
         ps.println(it.name+":");
         it.initinst.forEach(ii->{
@@ -111,7 +111,7 @@ public class ASMPrinter implements ASMVisitor {
 
     @Override
     public void visit(mvInst it){
-        ps.println("\tmv  "+it.resreg.regname+", "+it.sourcereg);
+        ps.println("\tmv  "+it.resreg.regname+", "+it.sourcereg.regname);
     }
 
     @Override

@@ -11,7 +11,7 @@ public class ASMfunction {
     public ArrayList<ASMBasicblock> blocks = new ArrayList<>();
     public ArrayList<ASMInst> initinst = new ArrayList<>();
     public int stacksize;
-    public HashMap<register, Integer> vreglocation = new HashMap<>();
+    public HashMap<String, Integer> vreglocation = new HashMap<>();
 
     public ASMfunction(String name){
         this.name = name;

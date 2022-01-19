@@ -52,5 +52,38 @@ public class Module {
         para = new parameter(new register("%0"), new intType());
         toString.paralist.add(para);
         functionlist.add(toString);
+
+        Function string_length = new Function("string_length", new intType());
+        para = new parameter(new register("%0"), new stringType());
+        string_length.paralist.add(para);
+        functionlist.add(string_length);
+
+        Function string_substring = new Function("string_substring", new stringType());
+        parameter para1 = new parameter(new register("%0"), new stringType());
+        parameter para2 = new parameter(new register("%1"), new intType());
+        parameter para3 = new parameter(new register("%2"), new intType());
+        string_substring.paralist.add(para1);
+        string_substring.paralist.add(para2);
+        string_substring.paralist.add(para3);
+        functionlist.add(string_substring);
+
+        Function string_parseInt = new Function("string_parseInt", new intType());
+        para = new parameter(new register("%0"), new stringType());
+        string_parseInt.paralist.add(para);
+        functionlist.add(string_parseInt);
+
+        Function string_ord = new Function("string_ord", new intType());
+        para1 = new parameter(new register("%0"), new stringType());
+        para2 = new parameter(new register("%1"), new intType());
+        string_ord.paralist.add(para1);
+        string_ord.paralist.add(para2);
+        functionlist.add(string_ord);
+
+        Function string_add = new Function("sting_add", new stringType());
+        para1 = new parameter(new register("%0"), new stringType());
+        para2 = new parameter(new register("%1"), new stringType());
+        string_add.paralist.add(para1);
+        string_add.paralist.add(para2);
+        functionlist.add(string_add);
     }
 }
