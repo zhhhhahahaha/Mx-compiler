@@ -1004,8 +1004,15 @@ public class IRBuilder implements ASTVisitor {
             curScope.varlist.put(arrayname+"_size", varreg);
             curScope.typelist.put(arrayname+"_size", new intType());
             it.exprlist.get(0).accept(this);
-            globalvarInst gvar = new globalvarInst(varreg, new intType(), expr_value);
+            globalvarInst gvar = new globalvarInst(varreg, new intType(), new intConst(0));
             module.globalvarlist.add(gvar);
+
+            regcount++;
+            register loadres = new register("%"+regcount);
+            loadInst load = new loadInst(loadres, new intType(), new pointType(new intType()), varreg);
+            curblock.instlist.add(load);
+            storeInst store = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), varreg);
+            curblock.instlist.add(store);
         }
 
         exprtype = toIRType(it.varType);

@@ -63,15 +63,21 @@ public class main {
             new SymbolCollector(gScope).visit(ASTRoot);
             new SemanticChecker(gScope).visit(ASTRoot);
 
-            if(!SemanticFlag) {       //oj
+            if(!SemanticFlag) {                                              //oj
                 Module topmodule = new Module();
                 new IRBuilder(topmodule).visit(ASTRoot);
-                //new IRPrinter(IRoutput).visit(topmodule);     //本地
 
                 ASMmodule ASMtopmodule = new ASMmodule();
                 new ASMBuilder(ASMtopmodule).visit(topmodule);
                 new ASMPrinter(output).visit(ASMtopmodule);
             }
+            /*Module topmodule = new Module();                                //本地
+            new IRBuilder(topmodule).visit(ASTRoot);
+            new IRPrinter(IRoutput).visit(topmodule);
+
+            ASMmodule ASMtopmodule = new ASMmodule();
+            new ASMBuilder(ASMtopmodule).visit(topmodule);
+            new ASMPrinter(output).visit(ASMtopmodule);*/
 
         } catch (Error er){
             System.err.println(er.toString());
