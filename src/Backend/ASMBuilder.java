@@ -61,7 +61,7 @@ public class ASMBuilder implements IRVisitor {
             gv.accept(this);
         });
         it.globalinit.accept(this);
-        for(int i = 12; i < it.functionlist.size(); i++){
+        for(int i = 13; i < it.functionlist.size(); i++){
             it.functionlist.get(i).accept(this);
         }
         it.mainfunc.accept(this);
@@ -153,7 +153,15 @@ public class ASMBuilder implements IRVisitor {
 
     @Override
     public void visit(intConst it){
-        addiInst getres = new addiInst(targetreg, new phyreg("zero"), it.value);
+        int i = it.value;
+        if(i>2047){
+            while(i>2047){
+                addiInst getres = new addiInst(targetreg, new phyreg("zero"), 2047);
+                i-=2047;
+                curblock.instlist.add(getres);
+            }
+        }
+        addiInst getres = new addiInst(targetreg, new phyreg("zero"), i);
         curblock.instlist.add(getres);
     }
 

@@ -416,6 +416,31 @@ string_add:                             # @string_add
 	.size	string_add, .Lfunc_end11-string_add
 	.cfi_endproc
                                         # -- End function
+	.globl	array_size              # -- Begin function array_size
+	.p2align	2
+	.type	array_size,@function
+array_size:                             # @array_size
+	.cfi_startproc
+# %bb.0:
+	addi	sp, sp, -16
+	.cfi_def_cfa_offset 16
+	sw	ra, 12(sp)
+	sw	s0, 8(sp)
+	.cfi_offset ra, -4
+	.cfi_offset s0, -8
+	addi	s0, sp, 16
+	.cfi_def_cfa s0, 0
+	sw	a0, -16(s0)
+	lw	a0, -16(s0)
+	lw	a0, 0(a0)
+	lw	s0, 8(sp)
+	lw	ra, 12(sp)
+	addi	sp, sp, 16
+	ret
+.Lfunc_end12:
+	.size	array_size, .Lfunc_end12-array_size
+	.cfi_endproc
+                                        # -- End function
 	.type	.L.str,@object          # @.str
 	.section	.rodata.str1.1,"aMS",@progbits,1
 .L.str:

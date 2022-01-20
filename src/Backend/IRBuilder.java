@@ -127,7 +127,16 @@ public class IRBuilder implements ASTVisitor {
 
             ((indexExprNode) it).index.accept(this);
             ArrayList<operand> getindex = new ArrayList<>();
-            getindex.add(expr_value);
+            if(expr_is_operand){
+                getindex.add(new intConst(((intConst)expr_value).value+1));
+            }
+            else{
+                regcount++;
+                register addres = new register("%"+regcount);
+                binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, addres);
+                curblock.instlist.add(add);
+                getindex.add(addres);
+            }
             regcount++;
             register getresreg = new register("%"+regcount);
             getelementptrInst get = new getelementptrInst(getresreg, restype, sourcereg, sourcetype, getindex);
@@ -143,10 +152,13 @@ public class IRBuilder implements ASTVisitor {
             functioncallInst malloc = new functioncallInst(target, new arrayType(exprlist.size()-beg, basetype), "malloc");
             parameter mpara = new parameter(null, new intType());
             if(expr_value instanceof intConst) {
-                mpara.parareg = new intConst(((intConst) expr_value).value * 4);
+                mpara.parareg = new intConst(((intConst) expr_value).value * 4 + 4);
             }
             malloc.paras.add(mpara);
             curblock.instlist.add(malloc);
+
+            storeInst store = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), target);
+            curblock.instlist.add(store);
         }
         else{
             IRType vtype = new intType();
@@ -158,15 +170,18 @@ public class IRBuilder implements ASTVisitor {
             curScope.typelist.put("i"+beg, vtype);
 
             exprlist.get(beg).accept(this);
-            storeInst varinit = new storeInst(vtype,null, new intConst(0), false, new pointType(vtype), vreg);
+            storeInst varinit = new storeInst(vtype,null, new intConst(1), false, new pointType(vtype), vreg);
             curblock.instlist.add(varinit);
 
             functioncallInst malloc = new functioncallInst(target, new arrayType(exprlist.size()-beg, basetype), "malloc");
             parameter mpara = new parameter(null, new intType());
             if(expr_value instanceof intConst)
-                mpara.parareg = new intConst(((intConst) expr_value).value*4);
+                mpara.parareg = new intConst(((intConst) expr_value).value*4 + 4);
             malloc.paras.add(mpara);
             curblock.instlist.add(malloc);
+
+            storeInst storesize = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), target);
+            curblock.instlist.add(storesize);
 
             curfunc.labelcount+=3;
             BasicBlock condblock = new BasicBlock(new label(curfunc.labelcount-2));
@@ -182,7 +197,7 @@ public class IRBuilder implements ASTVisitor {
             condblock.instlist.add(cload);
             regcount++;
             register cmp = new register("%"+regcount);
-            icmpInst cond = new icmpInst(cmp, icmpInst.cmpType.slt, new intType(), cloadres, expr_value);
+            icmpInst cond = new icmpInst(cmp, icmpInst.cmpType.slt, new intType(), cloadres, new intConst(((intConst)expr_value).value+1));
             condblock.instlist.add(cond);
             branchInst tostate = new branchInst(stateblock.block_label, nextblock.block_label, true, cmp);
             condblock.instlist.add(tostate);
@@ -446,7 +461,16 @@ public class IRBuilder implements ASTVisitor {
 
         it.index.accept(this);
         ArrayList<operand> getindex = new ArrayList<>();
-        getindex.add(expr_value);
+        if(expr_is_operand){
+            getindex.add(new intConst(((intConst)expr_value).value+1));
+        }
+        else{
+            regcount++;
+            register addres = new register("%"+regcount);
+            binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, addres);
+            curblock.instlist.add(add);
+            getindex.add(addres);
+        }
         regcount++;
         register getresreg = new register("%"+regcount);
         getelementptrInst get = new getelementptrInst(getresreg, restype, sourcereg, sourcetype, getindex);
@@ -563,30 +587,24 @@ public class IRBuilder implements ASTVisitor {
                     func = module.functionlist.get(i);
             }
             else if(exprtype instanceof arrayType){
-                register sizereg = curScope.findvarreg(((idNode)it.expr).id + "_size");
-                regcount++;
-                register loadres = new register("%"+regcount);
-                loadInst load = new loadInst(loadres, new intType(), new pointType(new intType()), sizereg);
-                curblock.instlist.add(load);
-
-                exprtype = new intType();
-                expr_is_operand = false;
-                expr_value = loadres;
-                return;
+                    if(module.functionlist.get(i).name.equals("array_size"));
+                    func = module.functionlist.get(i);
             }
         }
         functioncallInst call = new functioncallInst(null, func.rettype, func.name);
         parameter thispara = new parameter((register) expr_value, exprtype);
         call.paras.add(thispara);
-        it.exprlist.exprlist.forEach(ep->{
-            ep.accept(this);
-            parameter para = new parameter(null, exprtype);
-            para.parareg = expr_value;
-            call.paras.add(para);
-        });
+        if(it.exprlist!=null)
+            it.exprlist.exprlist.forEach(ep->{
+                ep.accept(this);
+                parameter para = new parameter(null, exprtype);
+                para.parareg = expr_value;
+                call.paras.add(para);
+            });
         regcount++;
         register resreg = new register("%"+regcount);
         call.resreg = resreg;
+        curblock.instlist.add(call);
 
         exprtype = func.rettype;
         expr_is_operand = false;
@@ -985,9 +1003,9 @@ public class IRBuilder implements ASTVisitor {
     public void visit(arrayCreatorNode it){
         regcount++;
         register resreg = new register("%"+regcount);
-        newarray(resreg, it.exprlist, 0, toIRType(it.varType));
+        newarray(resreg, it.exprlist, 0, ((arrayType)toIRType(it.varType)).type);
 
-        if(curScope.scopetype!=IRScope.ScopeType.Global) {
+        /*if(curScope.scopetype!=IRScope.ScopeType.Global) {
             regcount++;
             register sizeres = new register("%" + regcount);
             allocaInst allocsize = new allocaInst(sizeres, new intType());
@@ -1013,7 +1031,7 @@ public class IRBuilder implements ASTVisitor {
             curblock.instlist.add(load);
             storeInst store = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), varreg);
             curblock.instlist.add(store);
-        }
+        }*/
 
         exprtype = toIRType(it.varType);
         expr_is_operand = false;

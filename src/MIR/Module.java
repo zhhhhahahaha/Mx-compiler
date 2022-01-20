@@ -3,10 +3,7 @@ package MIR;
 import MIR.Entity.parameter;
 import MIR.Inst.globalvarInst;
 import MIR.Operand.register;
-import MIR.Type.classType;
-import MIR.Type.intType;
-import MIR.Type.stringType;
-import MIR.Type.voidType;
+import MIR.Type.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,5 +82,11 @@ public class Module {
         string_add.paralist.add(para1);
         string_add.paralist.add(para2);
         functionlist.add(string_add);
+
+        Function array_size = new Function("array_size", new intType());
+        para = new parameter(new register("%0"), new pointType(new intType()));
+        array_size.paralist.add(para);
+        functionlist.add(array_size);
+
     }
 }

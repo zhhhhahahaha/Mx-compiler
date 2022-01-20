@@ -74,4 +74,7 @@ char* string_add(char* p1, char* p2){
     return tmp;
 }
 
+int array_size(int* array){
+    return *array;
+}
 

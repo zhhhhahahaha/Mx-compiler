@@ -20,7 +20,7 @@ public class IRPrinter implements IRVisitor{
         it.classlist.forEach(cl->{
             cl.accept(this);
         });
-        for(int i = 12; i < it.functionlist.size(); i++){
+        for(int i = 13; i < it.functionlist.size(); i++){
             it.functionlist.get(i).accept(this);
         }
         it.globalvarlist.forEach(gl->{
