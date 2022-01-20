@@ -17,6 +17,7 @@ public interface ASMVisitor {
     void visit(cmpInst it);
     void visit(jInst it);
     void visit(laInst it);
+    void visit(liInst it);
     void visit(lwInst it);
     void visit(mvInst it);
     void visit(swInst it);

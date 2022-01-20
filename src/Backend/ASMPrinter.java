@@ -105,6 +105,10 @@ public class ASMPrinter implements ASMVisitor {
     }
 
     @Override
+    public void visit(liInst it){
+        ps.println("\tli  "+it.resreg.regname+", "+it.imm);
+    }
+    @Override
     public void visit(lwInst it){
         ps.println("\tlw  "+it.resreg.regname+", "+it.imm+"("+it.destreg.regname+")");
     }

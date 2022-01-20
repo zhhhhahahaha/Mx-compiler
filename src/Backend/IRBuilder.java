@@ -28,7 +28,6 @@ public class IRBuilder implements ASTVisitor {
     public operand expr_value;
     public IRType exprtype;
 
-    public String arrayname; //用于开存放数组大小变量时的数组名字确定
 
     public IRBuilder(Module module){
         this.module = module;
@@ -323,9 +322,6 @@ public class IRBuilder implements ASTVisitor {
                     curblock.instlist.add(load);
 
                     if(vd.init!=null) {
-                        if(vartype instanceof arrayType){
-                            arrayname = vd.name;
-                        }
                         vd.init.accept(this);
                         storeInst store = new storeInst(vartype, null, null, false, new pointType(vartype), varreg);
                         if (expr_is_operand)
@@ -721,301 +717,297 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(binaryExprNode it){
-        operand leftop = null, rightop = null;
-        it.lhs.accept(this);
-        leftop = expr_value;
-        it.rhs.accept(this);
-        rightop = expr_value;
-        if(!(leftop instanceof register) && !(rightop instanceof register)){
-            expr_is_operand = true;
-            switch (it.opCode){
-                case mul:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value*((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case div:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value/((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case mod:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value%((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case add:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value + ((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case sub:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value-((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case shl:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value<<((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case shr:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value>>((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case and:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value&((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case xor:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value^((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case or:
-                    if(leftop instanceof intConst && rightop instanceof intConst)
-                        expr_value = new intConst(((intConst) leftop).value|((intConst) rightop).value);
-                    exprtype = new intType();
-                    break;
-                case les:
-                    if(leftop instanceof intConst && rightop instanceof intConst){
-                        if(((intConst) leftop).value<((intConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    exprtype = new boolType();
-                    break;
-                case loe:
-                    if(leftop instanceof intConst && rightop instanceof intConst){
-                        if(((intConst) leftop).value<=((intConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    exprtype = new boolType();
-                    break;
-                case gre:
-                    if(leftop instanceof intConst && rightop instanceof intConst){
-                        if(((intConst) leftop).value>((intConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    exprtype = new boolType();
-                    break;
-                case goe:
-                    if(leftop instanceof intConst && rightop instanceof intConst){
-                        if(((intConst) leftop).value>=((intConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    exprtype = new boolType();
-                    break;
-                case eq:
-                    if(leftop instanceof intConst && rightop instanceof intConst){
-                        if(((intConst) leftop).value==((intConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    else if(leftop instanceof boolConst && rightop instanceof boolConst){
-                        if(((boolConst) leftop).value==((boolConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    exprtype = new boolType();
-                    break;
-                case neq:
-                    if(leftop instanceof intConst && rightop instanceof intConst){
-                        if(((intConst) leftop).value!=((intConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    else if(leftop instanceof boolConst && rightop instanceof boolConst){
-                        if(((boolConst) leftop).value!=((boolConst) rightop).value)
-                            expr_value = new boolConst(true);
-                        else expr_value = new boolConst(false);
-                    }
-                    exprtype = new boolType();
-                    break;
-                case loa:
-                    if(leftop instanceof boolConst && rightop instanceof boolConst){
-                        expr_value = new boolConst(((boolConst) leftop).value&&((boolConst) rightop).value);
-                    }
-                    exprtype = new boolType();
-                    break;
-                case loo:
-                    if(leftop instanceof boolConst && rightop instanceof boolConst){
-                        expr_value = new boolConst(((boolConst) leftop).value||((boolConst) rightop).value);
-                    }
-                    exprtype = new boolType();
-                    break;
-            }
-        }
-        else if(exprtype instanceof stringType){
-            if(it.opCode == binaryExprNode.binaryOpType.add){
-                regcount++;
-                register catres = new register("%"+regcount);
-                functioncallInst strcat = new functioncallInst(catres, new stringType(), "string_add");
-                parameter lpara = new parameter(leftop, new stringType());
-                parameter rpara = new parameter(rightop, new stringType());
-                strcat.paras.add(lpara);
-                strcat.paras.add(rpara);
-                curblock.instlist.add(strcat);
+            operand leftop = null, rightop = null;
+            it.lhs.accept(this);
+            leftop = expr_value;
+            it.rhs.accept(this);
+            rightop = expr_value;
+            if (!(leftop instanceof register) && !(rightop instanceof register)) {
+                expr_is_operand = true;
+                switch (it.opCode) {
+                    case mul:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value * ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case div:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value / ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case mod:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value % ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case add:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value + ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case sub:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value - ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case shl:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value << ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case shr:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value >> ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case and:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value & ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case xor:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value ^ ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case or:
+                        if (leftop instanceof intConst && rightop instanceof intConst)
+                            expr_value = new intConst(((intConst) leftop).value | ((intConst) rightop).value);
+                        exprtype = new intType();
+                        break;
+                    case les:
+                        if (leftop instanceof intConst && rightop instanceof intConst) {
+                            if (((intConst) leftop).value < ((intConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        }
+                        exprtype = new boolType();
+                        break;
+                    case loe:
+                        if (leftop instanceof intConst && rightop instanceof intConst) {
+                            if (((intConst) leftop).value <= ((intConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        }
+                        exprtype = new boolType();
+                        break;
+                    case gre:
+                        if (leftop instanceof intConst && rightop instanceof intConst) {
+                            if (((intConst) leftop).value > ((intConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        }
+                        exprtype = new boolType();
+                        break;
+                    case goe:
+                        if (leftop instanceof intConst && rightop instanceof intConst) {
+                            if (((intConst) leftop).value >= ((intConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        }
+                        exprtype = new boolType();
+                        break;
+                    case eq:
+                        if (leftop instanceof intConst && rightop instanceof intConst) {
+                            if (((intConst) leftop).value == ((intConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        } else if (leftop instanceof boolConst && rightop instanceof boolConst) {
+                            if (((boolConst) leftop).value == ((boolConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        }
+                        exprtype = new boolType();
+                        break;
+                    case neq:
+                        if (leftop instanceof intConst && rightop instanceof intConst) {
+                            if (((intConst) leftop).value != ((intConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        } else if (leftop instanceof boolConst && rightop instanceof boolConst) {
+                            if (((boolConst) leftop).value != ((boolConst) rightop).value)
+                                expr_value = new boolConst(true);
+                            else expr_value = new boolConst(false);
+                        }
+                        exprtype = new boolType();
+                        break;
+                    case loa:
+                        if (leftop instanceof boolConst && rightop instanceof boolConst) {
+                            expr_value = new boolConst(((boolConst) leftop).value && ((boolConst) rightop).value);
+                        }
+                        exprtype = new boolType();
+                        break;
+                    case loo:
+                        if (leftop instanceof boolConst && rightop instanceof boolConst) {
+                            expr_value = new boolConst(((boolConst) leftop).value || ((boolConst) rightop).value);
+                        }
+                        exprtype = new boolType();
+                        break;
+                }
+            } else if (exprtype instanceof stringType) {
+                if (it.opCode == binaryExprNode.binaryOpType.add) {
+                    regcount++;
+                    register catres = new register("%" + regcount);
+                    functioncallInst strcat = new functioncallInst(catres, new stringType(), "string_add");
+                    parameter lpara = new parameter(leftop, new stringType());
+                    parameter rpara = new parameter(rightop, new stringType());
+                    strcat.paras.add(lpara);
+                    strcat.paras.add(rpara);
+                    curblock.instlist.add(strcat);
 
-                exprtype = new stringType();
-                expr_value = catres;
-                expr_is_operand = false;
-            }
-            else{
-                regcount++;
-                register strcmpres = new register("%"+regcount);
-                functioncallInst strcmp = new functioncallInst(strcmpres, new intType(), "strcmp");
-                parameter lpara = new parameter(leftop, new stringType());
-                parameter rpara = new parameter(rightop, new stringType());
-                strcmp.paras.add(lpara);
-                strcmp.paras.add(rpara);
-                curblock.instlist.add(strcmp);
+                    exprtype = new stringType();
+                    expr_value = catres;
+                    expr_is_operand = false;
+                } else {
+                    regcount++;
+                    register strcmpres = new register("%" + regcount);
+                    functioncallInst strcmp = new functioncallInst(strcmpres, new intType(), "strcmp");
+                    parameter lpara = new parameter(leftop, new stringType());
+                    parameter rpara = new parameter(rightop, new stringType());
+                    strcmp.paras.add(lpara);
+                    strcmp.paras.add(rpara);
+                    curblock.instlist.add(strcmp);
 
+                    regcount++;
+                    register icmpres = new register("%" + regcount);
+                    icmpInst icm = new icmpInst(icmpres, null, new intType(), strcmpres, new intConst(0));
+                    switch (it.opCode) {
+                        case les:
+                            icm.cmptype = icmpInst.cmpType.slt;
+                            break;
+                        case loe:
+                            icm.cmptype = icmpInst.cmpType.sle;
+                            break;
+                        case gre:
+                            icm.cmptype = icmpInst.cmpType.sgt;
+                            break;
+                        case goe:
+                            icm.cmptype = icmpInst.cmpType.sge;
+                            break;
+                        case eq:
+                            icm.cmptype = icmpInst.cmpType.eq;
+                            break;
+                        case neq:
+                            icm.cmptype = icmpInst.cmpType.ne;
+                            break;
+                    }
+                    curblock.instlist.add(icm);
+                    exprtype = new boolType();
+                    expr_value = icmpres;
+                    expr_is_operand = false;
+                }
+
+            } else {
                 regcount++;
-                register icmpres = new register("%"+regcount);
-                icmpInst icm = new icmpInst(icmpres, null, new intType(), strcmpres, new intConst(0));
-                switch (it.opCode){
+                register res = new register("%" + regcount);
+                binaryInst bin = new binaryInst(null, exprtype, null, null, false, null, null, false, res);
+                if (leftop instanceof register) {
+                    bin.leftsourcereg = (register) leftop;
+                    bin.left_is_reg = true;
+                } else bin.leftoperand = leftop;
+                if (rightop instanceof register) {
+                    bin.rightsourcereg = (register) rightop;
+                    bin.right_is_reg = true;
+                } else bin.rightoperand = rightop;
+
+                icmpInst icm = new icmpInst(res, null, exprtype, leftop, rightop);
+
+                switch (it.opCode) {
+                    case mul:
+                        bin.op = binaryInst.binaryop.mul;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case div:
+                        bin.op = binaryInst.binaryop.div;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case mod:
+                        bin.op = binaryInst.binaryop.srem;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case add:
+                        bin.op = binaryInst.binaryop.add;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case sub:
+                        bin.op = binaryInst.binaryop.sub;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case shl:
+                        bin.op = binaryInst.binaryop.shl;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case shr:
+                        bin.op = binaryInst.binaryop.shr;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case and:
+                        bin.op = binaryInst.binaryop.and;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case xor:
+                        bin.op = binaryInst.binaryop.xor;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case or:
+                        bin.op = binaryInst.binaryop.or;
+                        exprtype = new intType();
+                        curblock.instlist.add(bin);
+                        break;
                     case les:
                         icm.cmptype = icmpInst.cmpType.slt;
+                        exprtype = new boolType();
+                        curblock.instlist.add(icm);
                         break;
                     case loe:
                         icm.cmptype = icmpInst.cmpType.sle;
+                        exprtype = new boolType();
+                        curblock.instlist.add(icm);
                         break;
                     case gre:
                         icm.cmptype = icmpInst.cmpType.sgt;
+                        exprtype = new boolType();
+                        curblock.instlist.add(icm);
                         break;
                     case goe:
                         icm.cmptype = icmpInst.cmpType.sge;
+                        exprtype = new boolType();
+                        curblock.instlist.add(icm);
                         break;
                     case eq:
                         icm.cmptype = icmpInst.cmpType.eq;
+                        exprtype = new boolType();
+                        curblock.instlist.add(icm);
                         break;
                     case neq:
                         icm.cmptype = icmpInst.cmpType.ne;
+                        exprtype = new boolType();
+                        curblock.instlist.add(icm);
+                        break;
+                    case loa:
+                        bin.op = binaryInst.binaryop.and;
+                        exprtype = new boolType();
+                        curblock.instlist.add(bin);
+                        break;
+                    case loo:
+                        bin.op = binaryInst.binaryop.or;
+                        exprtype = new boolType();
+                        curblock.instlist.add(bin);
                         break;
                 }
-                curblock.instlist.add(icm);
-                exprtype = new boolType();
-                expr_value = icmpres;
                 expr_is_operand = false;
+                expr_value = res;
             }
 
-        }
-        else{
-            regcount++;
-            register res = new register("%"+regcount);
-            binaryInst bin = new binaryInst(null, exprtype, null, null, false, null, null, false, res);
-            if(leftop instanceof register){
-                bin.leftsourcereg = (register) leftop;
-                bin.left_is_reg = true;
-            }else bin.leftoperand = leftop;
-            if(rightop instanceof register){
-                bin.rightsourcereg = (register) rightop;
-                bin.right_is_reg = true;
-            }else bin.rightoperand = rightop;
-
-            icmpInst icm = new icmpInst(res, null, exprtype, leftop, rightop);
-
-            switch (it.opCode){
-                case mul:
-                    bin.op = binaryInst.binaryop.mul;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case div:
-                    bin.op = binaryInst.binaryop.div;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case mod:
-                    bin.op = binaryInst.binaryop.srem;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case add:
-                    bin.op = binaryInst.binaryop.add;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case sub:
-                    bin.op = binaryInst.binaryop.sub;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case shl:
-                    bin.op = binaryInst.binaryop.shl;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case shr:
-                    bin.op = binaryInst.binaryop.shr;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case and:
-                    bin.op = binaryInst.binaryop.and;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case xor:
-                    bin.op = binaryInst.binaryop.xor;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case or:
-                    bin.op = binaryInst.binaryop.or;
-                    exprtype = new intType();
-                    curblock.instlist.add(bin);
-                    break;
-                case les:
-                    icm.cmptype = icmpInst.cmpType.slt;
-                    exprtype = new boolType();
-                    curblock.instlist.add(icm);
-                    break;
-                case loe:
-                    icm.cmptype = icmpInst.cmpType.sle;
-                    exprtype = new boolType();
-                    curblock.instlist.add(icm);
-                    break;
-                case gre:
-                    icm.cmptype = icmpInst.cmpType.sgt;
-                    exprtype = new boolType();
-                    curblock.instlist.add(icm);
-                    break;
-                case goe:
-                    icm.cmptype = icmpInst.cmpType.sge;
-                    exprtype = new boolType();
-                    curblock.instlist.add(icm);
-                    break;
-                case eq:
-                    icm.cmptype = icmpInst.cmpType.eq;
-                    exprtype = new boolType();
-                    curblock.instlist.add(icm);
-                    break;
-                case neq:
-                    icm.cmptype = icmpInst.cmpType.ne;
-                    exprtype = new boolType();
-                    curblock.instlist.add(icm);
-                    break;
-                case loa:
-                    bin.op = binaryInst.binaryop.and;
-                    exprtype = new boolType();
-                    curblock.instlist.add(bin);
-                    break;
-                case loo:
-                    bin.op = binaryInst.binaryop.or;
-                    exprtype = new boolType();
-                    curblock.instlist.add(bin);
-                    break;
-            }
-            expr_is_operand = false;
-            expr_value = res;
-        }
     }
 
     @Override
@@ -1365,9 +1357,6 @@ public class IRBuilder implements ASTVisitor {
 
         expr_is_operand = false;
         if(it.init!=null) {
-            if(vtype instanceof arrayType){
-                arrayname = it.name;
-            }
             it.init.accept(this);
             storeInst varinit = new storeInst(vtype, null, null, false, new pointType(vtype), vreg);
             if (expr_is_operand) {
