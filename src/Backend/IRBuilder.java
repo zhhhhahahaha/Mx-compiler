@@ -560,13 +560,13 @@ public class IRBuilder implements ASTVisitor {
                 }
                 break;
             case dop:
-                register doploadid = findvarptr(it.rhs);
 
                 regcount++;
                 register dopaddres = new register("%"+regcount);
                 binaryInst dopadd = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, dopaddres);
                 curblock.instlist.add(dopadd);
 
+                register doploadid = findvarptr(it.rhs);
                 storeInst dopstore = new storeInst(new intType(), dopaddres, null, true, new pointType(new intType()), doploadid);
                 curblock.instlist.add(dopstore);
 
@@ -575,13 +575,13 @@ public class IRBuilder implements ASTVisitor {
                 expr_value = dopaddres;
                 break;
             case dom:
-                register domloadid = findvarptr(it.rhs);
 
                 regcount++;
                 register domsubres = new register("%"+regcount);
                 binaryInst domsub = new binaryInst(binaryInst.binaryop.sub, new intType(), (register) expr_value, null, true, null, new intConst(1), false, domsubres);
                 curblock.instlist.add(domsub);
 
+                register domloadid = findvarptr(it.rhs);
                 storeInst domstore = new storeInst(new intType(), domsubres, null, true, new pointType(new intType()), domloadid);
                 curblock.instlist.add(domstore);
 
@@ -655,34 +655,35 @@ public class IRBuilder implements ASTVisitor {
         it.lhs.accept(this);
         switch (it.suffixOp){
             case dop:
-                register doploadid = findvarptr(it.lhs);
+                operand tem = expr_value;
 
                 regcount++;
                 register dopaddres = new register("%"+regcount);
                 binaryInst dopadd = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, dopaddres);
                 curblock.instlist.add(dopadd);
 
+                register doploadid = findvarptr(it.lhs);
                 storeInst dopstore = new storeInst(new intType(), dopaddres, null, true, new pointType(new intType()), doploadid);
                 curblock.instlist.add(dopstore);
 
                 expr_is_operand = false;
                 exprtype = new intType();
-                //expr_value不变
+                expr_value = tem;
                 break;
             case dom:
-                register domloadid = findvarptr(it.lhs);
-
+                tem = expr_value;
                 regcount++;
                 register domsubres = new register("%"+regcount);
                 binaryInst domsub = new binaryInst(binaryInst.binaryop.sub, new intType(), (register) expr_value, null, true, null, new intConst(1), false, domsubres);
                 curblock.instlist.add(domsub);
 
+                register domloadid = findvarptr(it.lhs);
                 storeInst domstore = new storeInst(new intType(), domsubres, null, true, new pointType(new intType()), domloadid);
                 curblock.instlist.add(domstore);
 
                 expr_is_operand = false;
                 exprtype = new intType();
-                //expr_value不变
+                expr_value = tem;
                 break;
         }
     }
@@ -1111,7 +1112,13 @@ public class IRBuilder implements ASTVisitor {
             if(module.functionlist.get(i).name.equals(it.id))
                 func = module.functionlist.get(i);
         }
-        functioncallInst call = new functioncallInst(null, func.rettype, it.id);
+        if(curClass!=null && func==null){
+            for(int i = 0; i < module.functionlist.size(); i++){
+                if(module.functionlist.get(i).name.equals(curClass.name+"_"+it.id))
+                    func = module.functionlist.get(i);
+            }
+        }
+        functioncallInst call = new functioncallInst(null, func.rettype, func.name);
         if(it.exprlist!=null)
             it.exprlist.exprlist.forEach(ep->{
                 ep.accept(this);

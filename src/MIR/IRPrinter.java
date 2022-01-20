@@ -267,7 +267,8 @@ public class IRPrinter implements IRVisitor{
         else{
             it.rettype.accept(this);
             ps.print(" ");
-            it.retreg.accept(this);
+            if(it.retreg!=null)
+                it.retreg.accept(this);
         }
         ps.println();
     }
