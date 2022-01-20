@@ -154,11 +154,29 @@ public class IRBuilder implements ASTVisitor {
             if(expr_value instanceof intConst) {
                 mpara.parareg = new intConst(((intConst) expr_value).value * 4 + 4);
             }
+            else{
+                regcount++;
+                register mulres = new register("%"+regcount);
+                binaryInst mul = new binaryInst(binaryInst.binaryop.mul, new intType(), (register) expr_value, null, true, null, new intConst(4), false, mulres);
+                curblock.instlist.add(mul);
+
+                regcount++;
+                register addres = new register("%"+regcount);
+                binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), mulres, null, true, null, new intConst(4), false, addres);
+                curblock.instlist.add(add);
+                mpara.parareg = addres;
+            }
             malloc.paras.add(mpara);
             curblock.instlist.add(malloc);
 
-            storeInst store = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), target);
-            curblock.instlist.add(store);
+            if(expr_is_operand) {
+                storeInst store = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), target);
+                curblock.instlist.add(store);
+            }
+            else {
+                storeInst store = new storeInst(new intType(), (register) expr_value, null,  true, new pointType(new intType()), target);
+                curblock.instlist.add(store);
+            }
         }
         else{
             IRType vtype = new intType();
