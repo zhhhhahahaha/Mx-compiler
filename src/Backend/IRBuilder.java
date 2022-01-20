@@ -89,7 +89,23 @@ public class IRBuilder implements ASTVisitor {
     public register findvarptr(ExprNode it){
         register returnreg = null;
         if(it instanceof idNode){
-            return curScope.findvarreg(((idNode) it).id);
+            returnreg = curScope.findvarreg(((idNode) it).id);
+            if(curClass!=null && returnreg == null){
+                register object = curScope.findvarreg(curClass.name);
+                regcount++;
+                register loadres = new register("%"+regcount);
+                IRType loadrestype = new classType(curClass.name);
+                loadInst load = new loadInst(loadres, loadrestype, new pointType(loadrestype), object);
+                curblock.instlist.add(load);
+
+                regcount++;
+                returnreg = new register("%"+regcount);
+                ArrayList<operand> index = new ArrayList<>();
+                index.add(new intConst(0));
+                index.add(new intConst(curClass.typenumlist.get(((idNode) it).id)));
+                getelementptrInst get = new getelementptrInst(returnreg, loadrestype, loadres, loadrestype, index);
+                curblock.instlist.add(get);
+            }
         }
         else if(it instanceof memberExprNode){
             ((memberExprNode) it).expr.accept(this);
@@ -266,6 +282,7 @@ public class IRBuilder implements ASTVisitor {
             }
             else if(wp instanceof classDefNode){
                 classType classtype = new classType(((classDefNode) wp).name);
+                Function constr = new Function(((classDefNode)wp).name, new classType(((classDefNode) wp).name));
                 ((classDefNode) wp).classcontents.forEach(cc->{
                     if(cc instanceof varlistNode){
                         ((varlistNode) cc).varlist.forEach(vd->{
@@ -278,10 +295,11 @@ public class IRBuilder implements ASTVisitor {
                     }
                     else if(cc instanceof functiondefNode){
                         IRType rettype = toIRType(((functiondefNode) cc).returnType);
-                        Function func = new Function(((classDefNode) wp).name+"."+((functiondefNode) cc).functionName, rettype);
+                        Function func = new Function(((classDefNode) wp).name+"_"+((functiondefNode) cc).functionName, rettype);
                         module.functionlist.add(func);
                     }
                 });
+                module.functionlist.add(constr);
                 module.classlist.add(classtype);
             }
             else if(wp instanceof varlistNode){
@@ -358,7 +376,10 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(classConstructorNode it){
-        curfunc = new Function(curClass.name, null);
+        for(int i = 0; i < module.functionlist.size(); i++){
+            if(curClass.name.equals(module.functionlist.get(i).name))
+                curfunc = module.functionlist.get(i);
+        }
         curblock = new BasicBlock(new label(0));
         regcount = 1;
         register thisreg = new register("%"+regcount);
@@ -396,7 +417,7 @@ public class IRBuilder implements ASTVisitor {
         regcount = 0;
         for(int i = 0; i < module.functionlist.size(); i++){
             if(curScope.parentscope.scopetype == IRScope.ScopeType.Class) {
-                if (module.functionlist.get(i).name.equals(curClass.name + "." + it.functionName))
+                if (module.functionlist.get(i).name.equals(curClass.name + "_" + it.functionName))
                     curfunc = module.functionlist.get(i);
             }
             else {
@@ -597,7 +618,7 @@ public class IRBuilder implements ASTVisitor {
         Function func = null;
         for(int i = 0; i < module.functionlist.size(); i++){
             if(exprtype instanceof classType) {
-                if (module.functionlist.get(i).name.equals(((classType) exprtype).name + "." + it.id))
+                if (module.functionlist.get(i).name.equals(((classType) exprtype).name + "_" + it.id))
                     func = module.functionlist.get(i);
             }
             else if(exprtype instanceof stringType){
