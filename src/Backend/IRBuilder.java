@@ -236,30 +236,31 @@ public class IRBuilder implements ASTVisitor {
             condblock.instlist.add(tostate);
             curfunc.blocklist.add(condblock);
 
+            curblock = stateblock;
             regcount++;
             register sloadres = new register("%"+regcount);
             loadInst sload = new loadInst(sloadres, new intType(), new pointType(new intType()), vreg);
-            stateblock.instlist.add(sload);
+            curblock.instlist.add(sload);
             regcount++;
             register getres = new register("%"+regcount);
             ArrayList<operand> index = new ArrayList<>();
             index.add(sloadres);
             getelementptrInst get = new getelementptrInst(getres, new arrayType(exprlist.size()-beg-1, basetype), target, malloc.returntype, index);
-            stateblock.instlist.add(get);
+            curblock.instlist.add(get);
             regcount++;
             register newcreat = new register("%"+regcount);
             newarray(newcreat, exprlist, beg+1, basetype);
             storeInst ptrstore = new storeInst(new arrayType(exprlist.size()-beg-1, basetype), newcreat, null, true, new pointType(get.firsttype), getres);
-            stateblock.instlist.add(ptrstore);
+            curblock.instlist.add(ptrstore);
             regcount++;
             register addres = new register("%"+regcount);
-            binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), sloadres, null, true, null, new intConst(-1), false, addres);
-            stateblock.instlist.add(add);
+            binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), sloadres, null, true, null, new intConst(1), false, addres);
+            curblock.instlist.add(add);
             storeInst sstore = new storeInst(new intType(), addres, null, true, new pointType(new intType()), vreg);
-            stateblock.instlist.add(sstore);
+            curblock.instlist.add(sstore);
             branchInst backcond = new branchInst(condblock.block_label, null, false, null);
-            stateblock.instlist.add(backcond);
-            curfunc.blocklist.add(stateblock);
+            curblock.instlist.add(backcond);
+            curfunc.blocklist.add(curblock);
 
             curblock = nextblock;
         }
@@ -335,7 +336,7 @@ public class IRBuilder implements ASTVisitor {
                 });
             }
         });
-        module.globalinit.blocklist.add(globalinit);
+        module.globalinit.blocklist.add(curblock);
         curblock = null;
         curfunc = null;
 
