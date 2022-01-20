@@ -717,6 +717,74 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(binaryExprNode it){
+        if(it.opCode == binaryExprNode.binaryOpType.loa || it.opCode == binaryExprNode.binaryOpType.loo){
+            it.lhs.accept(this);
+            curfunc.labelcount+=2;
+            BasicBlock finalblock = new BasicBlock(new label(curfunc.labelcount));
+            BasicBlock longpath = new BasicBlock(new label(curfunc.labelcount-1));
+            regcount++;
+            register allocreg = new register("%"+regcount);
+            allocaInst alloc = new allocaInst(allocreg, new boolType());
+            curfunc.allocalist.add(alloc);
+            storeInst storealloc = new storeInst(new boolType(), null, null, false, new pointType(new boolType()), allocreg);
+
+            regcount++;
+            register whethershort = new register("%"+regcount);
+            if(it.opCode == binaryExprNode.binaryOpType.loa){
+                binaryInst xor = new binaryInst(binaryInst.binaryop.xor, new boolType(), null, null, false, null, new boolConst(true), false, whethershort);
+                if(expr_is_operand){
+                    xor.leftoperand = expr_value;
+                    storealloc.sourceop = expr_value;
+                }else{
+                    xor.leftsourcereg = (register) expr_value;
+                    xor.left_is_reg = true;
+                    storealloc.sourcereg = (register) expr_value;
+                    storealloc.fromreg = true;
+                }
+                curblock.instlist.add(xor);
+            }else{
+                binaryInst or = new binaryInst(binaryInst.binaryop.or, new boolType(), null, null, false, null, new boolConst(false), false, whethershort);
+                if(expr_is_operand){
+                    or.leftoperand = expr_value;
+                    storealloc.sourceop = expr_value;
+                }else{
+                    or.leftsourcereg = (register) expr_value;
+                    or.left_is_reg = true;
+                    storealloc.sourcereg = (register) expr_value;
+                    storealloc.fromreg = true;
+                }
+                curblock.instlist.add(or);
+            }
+            curblock.instlist.add(storealloc);
+            branchInst br = new branchInst(finalblock.block_label, longpath.block_label, true, whethershort);
+            curblock.instlist.add(br);
+            curfunc.blocklist.add(curblock);
+
+            curblock = longpath;
+            it.rhs.accept(this);
+            storeInst storeallocagain = new storeInst(new boolType(), null, null, false, new pointType(new boolType()), allocreg);
+            if(expr_is_operand){
+                storeallocagain.sourceop = expr_value;
+            }else{
+                storeallocagain.sourcereg = (register) expr_value;
+                storeallocagain.fromreg = true;
+            }
+            curblock.instlist.add(storeallocagain);
+            br = new branchInst(finalblock.block_label, null, false, null);
+            curblock.instlist.add(br);
+            curfunc.blocklist.add(curblock);
+
+            curblock = finalblock;
+            regcount++;
+            register loadres = new register("%"+regcount);
+            loadInst load = new loadInst(loadres, new boolType(), new pointType(new boolType()), allocreg);
+            curblock.instlist.add(load);
+
+            exprtype = new boolType();
+            expr_value = loadres;
+            expr_is_operand = false;
+        }
+        else {
             operand leftop = null, rightop = null;
             it.lhs.accept(this);
             leftop = expr_value;
@@ -828,18 +896,6 @@ public class IRBuilder implements ASTVisitor {
                             if (((boolConst) leftop).value != ((boolConst) rightop).value)
                                 expr_value = new boolConst(true);
                             else expr_value = new boolConst(false);
-                        }
-                        exprtype = new boolType();
-                        break;
-                    case loa:
-                        if (leftop instanceof boolConst && rightop instanceof boolConst) {
-                            expr_value = new boolConst(((boolConst) leftop).value && ((boolConst) rightop).value);
-                        }
-                        exprtype = new boolType();
-                        break;
-                    case loo:
-                        if (leftop instanceof boolConst && rightop instanceof boolConst) {
-                            expr_value = new boolConst(((boolConst) leftop).value || ((boolConst) rightop).value);
                         }
                         exprtype = new boolType();
                         break;
@@ -993,21 +1049,11 @@ public class IRBuilder implements ASTVisitor {
                         exprtype = new boolType();
                         curblock.instlist.add(icm);
                         break;
-                    case loa:
-                        bin.op = binaryInst.binaryop.and;
-                        exprtype = new boolType();
-                        curblock.instlist.add(bin);
-                        break;
-                    case loo:
-                        bin.op = binaryInst.binaryop.or;
-                        exprtype = new boolType();
-                        curblock.instlist.add(bin);
-                        break;
                 }
                 expr_is_operand = false;
                 expr_value = res;
             }
-
+        }
     }
 
     @Override
