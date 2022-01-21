@@ -210,10 +210,34 @@ public class IRBuilder implements ASTVisitor {
             parameter mpara = new parameter(null, new intType());
             if(expr_value instanceof intConst)
                 mpara.parareg = new intConst(((intConst) expr_value).value*4 + 4);
+            else{
+                regcount++;
+                register mulres = new register("%"+regcount);
+                binaryInst mul = new binaryInst(binaryInst.binaryop.mul, new intType(), (register) expr_value, null, true, null, new intConst(4), false, mulres);
+                curblock.instlist.add(mul);
+
+                regcount++;
+                register addres = new register("%"+regcount);
+                binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), mulres, null, true, null, new intConst(4), false, addres);
+                curblock.instlist.add(add);
+                mpara.parareg = addres;
+            }
             malloc.paras.add(mpara);
             curblock.instlist.add(malloc);
 
-            storeInst storesize = new storeInst(new intType(), null, expr_value, false, new pointType(new intType()), target);
+            storeInst storesize = new storeInst(new intType(), null, null, false, new pointType(new intType()), target);
+            if(!expr_is_operand){
+                storesize.sourceop = null;
+                storesize.fromreg = true;
+                regcount++;
+                register addres = new register("%"+regcount);
+                binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, addres);
+                curblock.instlist.add(add);
+                storesize.sourcereg = addres;
+            }
+            else{
+                storesize.sourceop = new intConst(((intConst) expr_value).value+1);
+            }
             curblock.instlist.add(storesize);
 
             curfunc.labelcount+=3;
@@ -230,7 +254,17 @@ public class IRBuilder implements ASTVisitor {
             condblock.instlist.add(cload);
             regcount++;
             register cmp = new register("%"+regcount);
-            icmpInst cond = new icmpInst(cmp, icmpInst.cmpType.slt, new intType(), cloadres, new intConst(((intConst)expr_value).value+1));
+            icmpInst cond = new icmpInst(cmp, icmpInst.cmpType.slt, new intType(), cloadres, null);
+            if(expr_is_operand){
+                cond.right = new intConst(((intConst)expr_value).value+1);
+            }
+            else{
+                regcount++;
+                register addres = new register("%"+regcount);
+                binaryInst add = new binaryInst(binaryInst.binaryop.add, new intType(), (register) expr_value, null, true, null, new intConst(1), false, addres);
+                condblock.instlist.add(add);
+                cond.right = addres;
+            }
             condblock.instlist.add(cond);
             branchInst tostate = new branchInst(stateblock.block_label, nextblock.block_label, true, cmp);
             condblock.instlist.add(tostate);
