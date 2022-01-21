@@ -246,7 +246,11 @@ public class ASMBuilder implements IRVisitor {
     }
 
     @Override
-    public void visit(nullConst it){}
+    public void visit(nullConst it){
+        addiInst getres = new addiInst(targetreg, new phyreg("zero"), 0);
+        curblock.instlist.add(getres);
+    }
+
     @Override
     public void visit(register it){}
     @Override

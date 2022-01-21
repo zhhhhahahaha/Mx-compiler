@@ -1147,18 +1147,31 @@ public class IRBuilder implements ASTVisitor {
 
     @Override
     public void visit(functionCallNode it){
+        boolean callmethod = false;
         Function func = null;
         for(int i = 0; i < module.functionlist.size(); i++){
             if(module.functionlist.get(i).name.equals(it.id))
                 func = module.functionlist.get(i);
         }
         if(curClass!=null && func==null){
+            callmethod = true;
             for(int i = 0; i < module.functionlist.size(); i++){
                 if(module.functionlist.get(i).name.equals(curClass.name+"_"+it.id))
                     func = module.functionlist.get(i);
             }
         }
         functioncallInst call = new functioncallInst(null, func.rettype, func.name);
+        if(curClass!=null && callmethod){
+            register object = curScope.findvarreg(curClass.name);
+            regcount++;
+            register loadres = new register("%"+regcount);
+            IRType loadrestype = new classType(curClass.name);
+            loadInst load = new loadInst(loadres, loadrestype, new pointType(loadrestype), object);
+            curblock.instlist.add(load);
+
+            parameter thispara = new parameter(loadres, new classType(curClass.name));
+            call.paras.add(thispara);
+        }
         if(it.exprlist!=null)
             it.exprlist.exprlist.forEach(ep->{
                 ep.accept(this);
