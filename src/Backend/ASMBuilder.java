@@ -73,7 +73,7 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public boolean checkimm(int imm){
-        if(imm<2048&&imm>-2049){
+        if(imm<2046&&imm>-2047){
             return true;
         }
         else{
@@ -102,10 +102,19 @@ public class ASMBuilder implements IRVisitor {
             curblock.instlist.add(callglobal);
         }
         for(int i = 0; i < it.paralist.size(); i++){
-            curfunc.stacksize+=4;
-            swInst storepara = new swInst(new phyreg("a"+i), new phyreg("s0"), -curfunc.stacksize);
-            curblock.instlist.add(storepara);
-            curfunc.vreglocation.put(((register) it.paralist.get(i).parareg).name, -curfunc.stacksize);
+            if(i<8) {
+                curfunc.stacksize += 4;
+                swInst storepara = new swInst(new phyreg("a" + i), new phyreg("s0"), -curfunc.stacksize);
+                curblock.instlist.add(storepara);
+                curfunc.vreglocation.put(((register) it.paralist.get(i).parareg).name, -curfunc.stacksize);
+            }else {
+                curfunc.stacksize+=4;
+                lwInst loadpara = new lwInst(new phyreg("t0"), new phyreg("s0"), 4*(i-8));
+                curblock.instlist.add(loadpara);
+                swInst storepara = new swInst(new phyreg("t0"), new phyreg("s0"), -curfunc.stacksize);
+                curblock.instlist.add(storepara);
+                curfunc.vreglocation.put(((register) it.paralist.get(i).parareg).name, -curfunc.stacksize);
+            }
         }
         it.allocalist.forEach(al->{
             al.accept(this);
@@ -280,6 +289,7 @@ public class ASMBuilder implements IRVisitor {
             swInst store = new swInst(new phyreg("t0"), new phyreg("t1"), 0);
             curblock.instlist.add(li);
             curblock.instlist.add(add);
+            curblock.instlist.add(store);
         }
     }
 
@@ -375,16 +385,35 @@ public class ASMBuilder implements IRVisitor {
             curfunc.stacksize += 4;
             curfunc.vreglocation.put(it.resreg.name, -curfunc.stacksize);
         }
+        if(it.paras.size()>8){
+            addiInst add = new addiInst(new phyreg("sp"), new phyreg("sp"), -4*(it.paras.size()-8));
+            curblock.instlist.add(add);
+        }
         for(int i = 0; i < it.paras.size(); i++){
-            if(it.paras.get(i).parareg instanceof register)
-                loadreg((register) it.paras.get(i).parareg, "a"+i);
-            else{
-                targetreg = new phyreg("a"+i);
-                it.paras.get(i).parareg.accept(this);
+            if(i<8) {
+                if (it.paras.get(i).parareg instanceof register)
+                    loadreg((register) it.paras.get(i).parareg, "a" + i);
+                else {
+                    targetreg = new phyreg("a" + i);
+                    it.paras.get(i).parareg.accept(this);
+                }
+            }else{
+                if (it.paras.get(i).parareg instanceof register)
+                    loadreg((register) it.paras.get(i).parareg, "t0");
+                else {
+                    targetreg = new phyreg("t0");
+                    it.paras.get(i).parareg.accept(this);
+                }
+                swInst store = new swInst(new phyreg("t0"), new phyreg("sp"), (i-8)*4);
+                curblock.instlist.add(store);
             }
         }
         callInst call = new callInst(it.functioname);
         curblock.instlist.add(call);
+        if(it.paras.size()>8){
+            addiInst add = new addiInst(new phyreg("sp"), new phyreg("sp"), 4*(it.paras.size()-8));
+            curblock.instlist.add(add);
+        }
         if(it.resreg!=null) {
             if(checkimm(-curfunc.stacksize)) {
                 swInst store = new swInst(new phyreg("a0"), new phyreg("s0"), -curfunc.stacksize);
@@ -457,7 +486,7 @@ public class ASMBuilder implements IRVisitor {
                     swInst store = new swInst(new phyreg("t4"), new phyreg("t5"), 0);
                     curblock.instlist.add(li);
                     curblock.instlist.add(add);
-                    curblock.instlist.add(getptr);
+                    curblock.instlist.add(store);
                 }
             }
         }
@@ -501,12 +530,12 @@ public class ASMBuilder implements IRVisitor {
         curblock.instlist.add(sub);
         swInst store = new swInst(null, new phyreg("s0"), -curfunc.stacksize);
         if(!checkimm(-curfunc.stacksize)){
-            liInst li = new liInst(new phyreg("t3"), -curfunc.stacksize);
-            biInst add = new biInst(new phyreg("t3"), new phyreg("t3"), new phyreg("s0"), biInst.Op.add);
+            liInst li = new liInst(new phyreg("t6"), -curfunc.stacksize);
+            biInst add = new biInst(new phyreg("t6"), new phyreg("t6"), new phyreg("s0"), biInst.Op.add);
             curblock.instlist.add(li);
             curblock.instlist.add(add);
             store.imm = 0;
-            store.destreg = new phyreg("t3");
+            store.destreg = new phyreg("t6");
         }
         switch (it.cmptype){
             case slt:
