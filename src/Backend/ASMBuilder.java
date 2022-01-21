@@ -403,7 +403,7 @@ public class ASMBuilder implements IRVisitor {
         curfunc.vreglocation.put(it.resreg.name, -curfunc.stacksize);
         loadreg(it.sourcereg, "t0");
 
-        if(it.firsttype instanceof classType){
+        if(it.sourcetype instanceof classType){
             addiInst addi = new addiInst(new phyreg("t1"), new phyreg("t0"), 0);
             addi.imm = 4 * ((intConst)it.indexlist.get(1)).value;
             curblock.instlist.add(addi);
