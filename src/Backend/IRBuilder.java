@@ -397,7 +397,6 @@ public class IRBuilder implements ASTVisitor {
 
         it.block.accept(this);
         curfunc.blocklist.add(curblock);
-        module.functionlist.add(curfunc);
         curfunc = null;
         curblock = null;
     }
