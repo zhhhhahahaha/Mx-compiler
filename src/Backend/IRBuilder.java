@@ -312,7 +312,9 @@ public class IRBuilder implements ASTVisitor {
                     if(vartype instanceof boolType){
                         gvar.value = new boolConst(false);
                     }
-                    else{
+                    else if (vartype instanceof stringType){
+                        gvar.value = new stringConst("\"\"");
+                    }else {
                         gvar.value = new intConst(0);
                     }
                     module.globalvarlist.add(gvar);
@@ -622,8 +624,8 @@ public class IRBuilder implements ASTVisitor {
                     func = module.functionlist.get(i);
             }
             else if(exprtype instanceof arrayType){
-                    if(module.functionlist.get(i).name.equals("array_size"));
-                    func = module.functionlist.get(i);
+                    if(module.functionlist.get(i).name.equals("array_size"))
+                        func = module.functionlist.get(i);
             }
         }
         functioncallInst call = new functioncallInst(null, func.rettype, func.name);
