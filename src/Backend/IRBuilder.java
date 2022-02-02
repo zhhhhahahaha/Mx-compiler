@@ -835,8 +835,14 @@ public class IRBuilder implements ASTVisitor {
                         exprtype = new intType();
                         break;
                     case div:
-                        if (leftop instanceof intConst && rightop instanceof intConst)
-                            expr_value = new intConst(((intConst) leftop).value / ((intConst) rightop).value);
+                        if (leftop instanceof intConst && rightop instanceof intConst) {
+                            if(((intConst) rightop).value!=0) {
+                                expr_value = new intConst(((intConst) leftop).value / ((intConst) rightop).value);
+                            }
+                            else{
+                                expr_value = new intConst(0);
+                            }
+                        }
                         exprtype = new intType();
                         break;
                     case mod:
