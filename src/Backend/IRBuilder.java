@@ -457,7 +457,7 @@ public class IRBuilder implements ASTVisitor {
                     curfunc = module.functionlist.get(i);
             }
         }
-        if(it.functionName.equals("main"))
+        if(it.functionName.equals("main")&& curScope.parentscope.scopetype != IRScope.ScopeType.Class)
             curfunc = module.mainfunc;
         curblock = new BasicBlock(new label(0));
         if(it.parameter!=null)
