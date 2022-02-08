@@ -80,7 +80,7 @@ public class InstSelector implements IRVisitor {
             }
         }
         for(int i = 0; i < 32; i++){
-            if(module.getRegType(i)==1 && !curfunc.name.equals("main") && !curfunc.name.equals("globalinit") || i==1){
+            if(module.getRegType(i)==1 && !curfunc.name.equals("main") && !curfunc.name.equals("globalinit")){
                 Operand reg = curfunc.addvreg();
                 phyreg caleereg = module.getphyregfrnum(i);
                 curblock.addtail(new mvInst(reg, caleereg));
@@ -98,7 +98,7 @@ public class InstSelector implements IRVisitor {
 
         curblock = new ASMBasicblock("."+curfunc.name+"exit");
         for(int i = 0; i < 32; i++){
-            if(module.getRegType(i)==1 && !curfunc.name.equals("main") && !curfunc.name.equals("globalinit") || i==1){
+            if(module.getRegType(i)==1 && !curfunc.name.equals("main") && !curfunc.name.equals("globalinit")){
                 Operand reg = regTrans.get(module.getphyregfrnum(i).regname);
                 phyreg caleereg = module.getphyregfrnum(i);
                 curblock.addtail(new mvInst(caleereg, reg));

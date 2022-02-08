@@ -510,6 +510,13 @@ public class Regalloca {
                 f.initinst.add(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
                 f.initinst.add(new swInst(module.getphyreg("s0"), module.getphyreg("t0"), 0));
             }
+            if(checkimm(f.stacksize-8)){
+                f.initinst.add(new swInst(module.getphyreg("ra"), module.getphyreg("sp"), f.stacksize-8));
+            }else{
+                f.initinst.add(new liInst(module.getphyreg("t0"), f.stacksize-8));
+                f.initinst.add(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
+                f.initinst.add(new swInst(module.getphyreg("ra"), module.getphyreg("t0"), 0));
+            }
             if(checkimm(f.stacksize)){
                 f.initinst.add(new addiInst(module.getphyreg("s0"), module.getphyreg("sp"), f.stacksize));
             }else{
@@ -524,13 +531,20 @@ public class Regalloca {
                     break;
                 }
             }
-            b.addtail(new lwInst(module.getphyreg("a0"), module.getphyreg("s0"), -8));
+            b.addtail(new lwInst(module.getphyreg("a0"), module.getphyreg("s0"), -12));
             if(checkimm(f.stacksize-4)){
                 b.addtail(new lwInst(module.getphyreg("s0"), module.getphyreg("sp"), f.stacksize-4));
             }else{
                 b.addtail(new liInst(module.getphyreg("t0"), f.stacksize-4));
                 b.addtail(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
                 b.addtail(new lwInst(module.getphyreg("s0"), module.getphyreg("t0"), 0));
+            }
+            if(checkimm(f.stacksize-8)){
+                b.addtail(new lwInst(module.getphyreg("ra"), module.getphyreg("sp"), f.stacksize-8));
+            }else{
+                b.addtail(new liInst(module.getphyreg("ra"), f.stacksize-8));
+                b.addtail(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
+                b.addtail(new lwInst(module.getphyreg("ra"), module.getphyreg("t0"), 0));
             }
             if(checkimm(f.stacksize)){
                 b.addtail(new addiInst(module.getphyreg("sp"), module.getphyreg("sp"), f.stacksize));

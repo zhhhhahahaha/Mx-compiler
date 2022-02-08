@@ -17,7 +17,7 @@ public class ASMfunction {
 
     public ASMfunction(String name){
         this.name = name;
-        stacksize = 8;
+        stacksize = 12;
         regcount = 0;
     }
 
