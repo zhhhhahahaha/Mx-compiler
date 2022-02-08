@@ -3,6 +3,7 @@ package Backend;
 import ASM.*;
 import ASM.Inst.*;
 import ASM.Operand.phyreg;
+import ASM.Operand.virtualreg;
 
 import java.io.PrintStream;
 
@@ -59,14 +60,16 @@ public class ASMPrinter implements ASMVisitor {
     @Override
     public void visit(ASMBasicblock it){
         ps.println(it.name+":");
-        it.instlist.forEach(il->{
-            il.accept(this);
-        });
+        ASMInst p = it.head;
+        while(p!=null){
+            p.accept(this);
+            p = p.succ;
+        }
     }
 
     @Override
     public void visit(addiInst it){
-        ps.println("\taddi  "+it.resreg.regname+", "+it.leftop.regname+", "+ it.imm);
+        ps.println("\taddi  "+((phyreg) (it.resreg)).regname+", "+((phyreg) (it.leftop)).regname+", "+ it.imm);
     }
 
     @Override
@@ -76,12 +79,12 @@ public class ASMPrinter implements ASMVisitor {
 
     @Override
     public void visit(beqzInst it){
-        ps.println("\tbeqz  "+it.sourcereg.regname+", "+it.destlabel);
+        ps.println("\tbeqz  "+((phyreg) (it.sourcereg)).regname+", "+it.destlabel);
     }
 
     @Override
     public void visit(biInst it){
-        ps.println("\t"+it.op+"  "+it.resreg.regname+", "+it.leftreg.regname+", "+it.rightreg.regname);
+        ps.println("\t"+it.op+"  "+((phyreg) (it.resreg)).regname+", "+((phyreg) (it.leftreg)).regname+", "+((phyreg) (it.rightreg)).regname);
     }
 
     @Override
@@ -91,7 +94,7 @@ public class ASMPrinter implements ASMVisitor {
 
     @Override
     public void visit(cmpInst it){
-        ps.println("\t"+it.op+"  "+it.resreg.regname+", "+it.sourcereg.regname);
+        ps.println("\t"+it.op+"  "+((phyreg) (it.resreg)).regname+", "+((phyreg) (it.sourcereg)).regname);
     }
 
     @Override
@@ -101,27 +104,28 @@ public class ASMPrinter implements ASMVisitor {
 
     @Override
     public void visit(laInst it){
-        ps.println("\tla  "+it.resreg.regname+", "+it.symbol);
+        ps.println("\tla  "+((phyreg) (it.resreg)).regname+", "+it.symbol);
     }
 
     @Override
     public void visit(liInst it){
-        ps.println("\tli  "+it.resreg.regname+", "+it.imm);
+        ps.println("\tli  "+((phyreg) (it.resreg)).regname+", "+it.imm);
     }
     @Override
     public void visit(lwInst it){
-        ps.println("\tlw  "+it.resreg.regname+", "+it.imm+"("+it.destreg.regname+")");
+        ps.println("\tlw  "+((phyreg) (it.resreg)).regname+", "+it.imm+"("+((phyreg) (it.destreg)).regname+")");
     }
 
     @Override
     public void visit(mvInst it){
-        ps.println("\tmv  "+it.resreg.regname+", "+it.sourcereg.regname);
+        ps.println("\tmv  "+((phyreg) (it.resreg)).regname+", "+((phyreg) (it.sourcereg)).regname);
     }
 
     @Override
     public void visit(swInst it){
-        ps.println("\tsw  "+it.sourcereg.regname+", "+it.imm+"("+it.destreg.regname+")");
+        ps.println("\tsw  "+((phyreg) (it.sourcereg)).regname+", "+it.imm+"("+((phyreg) (it.destreg)).regname+")");
     }
 
     @Override public void visit(phyreg it){}
+    @Override public void visit(virtualreg it){}
 }

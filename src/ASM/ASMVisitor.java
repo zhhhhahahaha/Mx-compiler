@@ -23,4 +23,5 @@ public interface ASMVisitor {
     void visit(swInst it);
 
     void visit(phyreg it);
+    void visit(virtualreg it);
 }

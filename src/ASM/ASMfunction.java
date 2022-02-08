@@ -1,7 +1,8 @@
 package ASM;
 
 import ASM.Inst.ASMInst;
-import MIR.Operand.register;
+import ASM.Operand.*;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,12 +12,19 @@ public class ASMfunction {
     public ArrayList<ASMBasicblock> blocks = new ArrayList<>();
     public ArrayList<ASMInst> initinst = new ArrayList<>();
     public int stacksize;
-    public HashMap<String, Integer> vreglocation = new HashMap<>();
+    public int regcount;
+    public HashMap<Operand, Integer> vreglocation = new HashMap<>(); //key是virtualreg的num，value是在stack中的位置
 
     public ASMfunction(String name){
         this.name = name;
-        stacksize = 12;
+        stacksize = 52;
+        regcount = 0;
     }
+
+    public virtualreg addvreg(){
+        return new virtualreg(regcount++);
+    }
+
     public void accept(ASMVisitor visitor) {
         visitor.visit(this);
     }

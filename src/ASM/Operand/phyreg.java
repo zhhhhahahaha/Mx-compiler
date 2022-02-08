@@ -8,7 +8,7 @@ package ASM.Operand;
 
 import ASM.ASMVisitor;
 
-public class phyreg extends operand{
+public class phyreg extends Operand {
 
     public String regname;
 

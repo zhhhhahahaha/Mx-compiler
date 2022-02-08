@@ -5,9 +5,7 @@ import java.io.PrintStream;
 import java.util.Objects;
 
 import ASM.*;
-import Backend.ASMBuilder;
-import Backend.ASMPrinter;
-import Backend.IRBuilder;
+import Backend.*;
 import Frontend.ASTBuilder;
 import Frontend.SemanticChecker;
 import Frontend.SymbolCollector;
@@ -68,7 +66,8 @@ public class main {
                 new IRBuilder(topmodule).visit(ASTRoot);
 
                 ASMmodule ASMtopmodule = new ASMmodule();
-                new ASMBuilder(ASMtopmodule).visit(topmodule);
+                new InstSelector(ASMtopmodule).visit(topmodule);
+                new Regalloca(ASMtopmodule);
                 new ASMPrinter(output).visit(ASMtopmodule);
             }
             /*Module topmodule = new Module();                                //本地
@@ -76,8 +75,11 @@ public class main {
             new IRPrinter(IRoutput).visit(topmodule);
 
             ASMmodule ASMtopmodule = new ASMmodule();
-            new ASMBuilder(ASMtopmodule).visit(topmodule);
+            new InstSelector(ASMtopmodule).visit(topmodule);
+            new Regalloca(ASMtopmodule);
             new ASMPrinter(output).visit(ASMtopmodule);*/
+            //new ASMBuilder(ASMtopmodule).visit(topmodule);
+            //new ASMPrinter(output).visit(ASMtopmodule);
 
         } catch (Error er){
             System.err.println(er.toString());
