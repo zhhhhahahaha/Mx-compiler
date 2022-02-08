@@ -430,7 +430,9 @@ public class Regalloca {
         for(var fb : func.blocks){
             ASMInst p = fb.head;
             while(p!=null) {
-                for (var u : p.use) {
+                HashSet<Operand> use = new HashSet<>(p.use);
+                HashSet<Operand> def = new HashSet<>(p.def);
+                for (var u : use) {
                     if (spilledNodes.contains(u)) {
                         Operand u1 = func.addvreg();
                         p.change(u, u1, 1);
@@ -445,7 +447,7 @@ public class Regalloca {
                         }
                     }
                 }
-                for (var d : p.def) {
+                for (var d : def) {
                     if (spilledNodes.contains(d)) {
                         Operand d1 = func.addvreg();
                         p.change(d, d1, 0);
@@ -505,6 +507,7 @@ public class Regalloca {
             for(int i = 0; i < 32; i++){
                 if((module.getRegType(i)==1 && !f.name.equals("main") && !f.name.equals("globalinit")) || i==1 || i==8){
                     imm-=4;
+                    if(i==9)imm-=4;
                     if(checkimm(imm)){
                         f.initinst.add(new swInst(module.getphyregfrnum(i), module.getphyreg("sp"), imm));
                     }else{
@@ -527,6 +530,7 @@ public class Regalloca {
             for(int i = 0; i < 32; i++){
                 if((module.getRegType(i)==1 && !f.name.equals("main") && !f.name.equals("globalinit")) || i==1 || i==8){
                     imm-=4;
+                    if(i==9)imm-=4;
                     if(checkimm(imm)){
                         b.addtail(new lwInst(module.getphyregfrnum(i), module.getphyreg("sp"), imm));
                     }else{
