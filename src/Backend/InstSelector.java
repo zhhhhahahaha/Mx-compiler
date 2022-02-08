@@ -94,6 +94,9 @@ public class InstSelector implements IRVisitor {
         it.blocklist.forEach(bl->{
             bl.accept(this);
         });
+        if(!curblock.succlabellist.contains("."+curfunc.name+"exit")){
+            curblock.succlabellist.add("."+curfunc.name+"exit");
+        }
         curfunc.blocks.add(curblock);
 
         curblock = new ASMBasicblock("."+curfunc.name+"exit");
