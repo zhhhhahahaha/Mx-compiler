@@ -79,6 +79,14 @@ public class InstSelector implements IRVisitor {
                 regTrans.put(((register)it.paralist.get(i).parareg).name, loadres);
             }
         }
+        for(int i = 0; i < 32; i++){
+            if(module.getRegType(i)==1 && !curfunc.name.equals("main") && !curfunc.name.equals("globalinit") || i==1){
+                Operand reg = curfunc.addvreg();
+                phyreg caleereg = module.getphyregfrnum(i);
+                curblock.addtail(new mvInst(reg, caleereg));
+                regTrans.put(caleereg.regname, reg);
+            }
+        }
         it.allocalist.forEach(al->{
             al.accept(this);
         });
@@ -86,7 +94,16 @@ public class InstSelector implements IRVisitor {
         it.blocklist.forEach(bl->{
             bl.accept(this);
         });
+        curfunc.blocks.add(curblock);
 
+        curblock = new ASMBasicblock("."+curfunc.name+"exit");
+        for(int i = 0; i < 32; i++){
+            if(module.getRegType(i)==1 && !curfunc.name.equals("main") && !curfunc.name.equals("globalinit") || i==1){
+                Operand reg = regTrans.get(module.getphyregfrnum(i).regname);
+                phyreg caleereg = module.getphyregfrnum(i);
+                curblock.addtail(new mvInst(caleereg, reg));
+            }
+        }
         curfunc.blocks.add(curblock);
         module.funclist.add(curfunc);
     }
@@ -385,6 +402,7 @@ public class InstSelector implements IRVisitor {
             curblock.addtail(new swInst(retres, module.getphyreg("s0"), -12));
         }
         curblock.addtail(new jInst("."+curfunc.name+"exit"));
+        curblock.succlabellist.add("."+curfunc.name+"exit");
     }
 
     @Override

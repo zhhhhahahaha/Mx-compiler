@@ -503,19 +503,12 @@ public class Regalloca {
                 f.initinst.add(new liInst(module.getphyreg("t0"), -f.stacksize));
                 f.initinst.add(new biInst(module.getphyreg("sp"), module.getphyreg("sp"), module.getphyreg("t0"), biInst.Op.add));
             }
-            int imm = f.stacksize;
-            for(int i = 0; i < 32; i++){
-                if((module.getRegType(i)==1 && !f.name.equals("main") && !f.name.equals("globalinit")) || i==1 || i==8){
-                    imm-=4;
-                    if(i==9)imm-=4;
-                    if(checkimm(imm)){
-                        f.initinst.add(new swInst(module.getphyregfrnum(i), module.getphyreg("sp"), imm));
-                    }else{
-                        f.initinst.add(new liInst(module.getphyreg("t0"), imm));
-                        f.initinst.add(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
-                        f.initinst.add(new swInst(module.getphyregfrnum(i), module.getphyreg("t0"), 0));
-                    }
-                }
+            if(checkimm(f.stacksize-4)){
+                f.initinst.add(new swInst(module.getphyreg("s0"), module.getphyreg("sp"), f.stacksize-4));
+            }else{
+                f.initinst.add(new liInst(module.getphyreg("t0"), f.stacksize-4));
+                f.initinst.add(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
+                f.initinst.add(new swInst(module.getphyreg("s0"), module.getphyreg("t0"), 0));
             }
             if(checkimm(f.stacksize)){
                 f.initinst.add(new addiInst(module.getphyreg("s0"), module.getphyreg("sp"), f.stacksize));
@@ -524,21 +517,20 @@ public class Regalloca {
                 f.initinst.add(new biInst(module.getphyreg("s0"), module.getphyreg("sp"), module.getphyreg("t0"), biInst.Op.add));
             }
 
-            ASMBasicblock b = new ASMBasicblock("."+f.name+"exit");
-            b.addtail(new lwInst(module.getphyreg("a0"), module.getphyreg("s0"), -12));
-            imm = f.stacksize;
-            for(int i = 0; i < 32; i++){
-                if((module.getRegType(i)==1 && !f.name.equals("main") && !f.name.equals("globalinit")) || i==1 || i==8){
-                    imm-=4;
-                    if(i==9)imm-=4;
-                    if(checkimm(imm)){
-                        b.addtail(new lwInst(module.getphyregfrnum(i), module.getphyreg("sp"), imm));
-                    }else{
-                        b.addtail(new liInst(module.getphyreg("t0"), imm));
-                        b.addtail(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
-                        b.addtail(new lwInst(module.getphyregfrnum(i), module.getphyreg("t0"),0));
-                    }
+            ASMBasicblock b = null;
+            for(var fb : f.blocks){
+                if(fb.name.equals("."+f.name+"exit")){
+                    b = fb;
+                    break;
                 }
+            }
+            b.addtail(new lwInst(module.getphyreg("a0"), module.getphyreg("s0"), -8));
+            if(checkimm(f.stacksize-4)){
+                b.addtail(new lwInst(module.getphyreg("s0"), module.getphyreg("sp"), f.stacksize-4));
+            }else{
+                b.addtail(new liInst(module.getphyreg("t0"), f.stacksize-4));
+                b.addtail(new biInst(module.getphyreg("t0"), module.getphyreg("t0"), module.getphyreg("sp"), biInst.Op.add));
+                b.addtail(new lwInst(module.getphyreg("s0"), module.getphyreg("t0"), 0));
             }
             if(checkimm(f.stacksize)){
                 b.addtail(new addiInst(module.getphyreg("sp"), module.getphyreg("sp"), f.stacksize));
@@ -547,7 +539,6 @@ public class Regalloca {
                 b.addtail(new biInst(module.getphyreg("sp"), module.getphyreg("sp"), module.getphyreg("t0"), biInst.Op.add));
             }
             b.addtail(new asmretInst());
-            f.blocks.add(b);
 
             for(var fb : f.blocks){
                 ASMInst p = fb.head;
