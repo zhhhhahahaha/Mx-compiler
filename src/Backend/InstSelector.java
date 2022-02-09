@@ -17,6 +17,7 @@ public class InstSelector implements IRVisitor {
     public ASMfunction curfunc;
     public ASMBasicblock curblock;
     public HashMap<String, Operand> regTrans = new HashMap<>();
+    public HashMap<String, Operand> alloTrans = new HashMap<>();  //用于消除alloca指令
 
     public Operand targetreg;  //used for const
 
@@ -36,7 +37,7 @@ public class InstSelector implements IRVisitor {
     public Operand getreg(register it){
         if(regTrans.containsKey(it.name)){
             return regTrans.get(it.name);
-        }else{
+        } else{
             Operand lares = curfunc.addvreg();
             curblock.addtail(new laInst(lares, "."+it.name));
             if(it.name.charAt(0)!='$'){
@@ -62,6 +63,8 @@ public class InstSelector implements IRVisitor {
 
     @Override
     public void visit(Function it){
+        regTrans = new HashMap<>();
+        alloTrans = new HashMap<>();
         curfunc = new ASMfunction(it.name);
         curblock = new ASMBasicblock("."+it.name+"para");
         if(it.name.equals("main")){
@@ -159,15 +162,15 @@ public class InstSelector implements IRVisitor {
     @Override
     public void visit(allocaInst it){
         Operand reg = curfunc.addvreg();
-        regTrans.put(it.reg.name, reg);
-        curfunc.stacksize+=4;
-        if(checkimm(-curfunc.stacksize)){
-            curblock.addtail(new addiInst(reg, module.getphyreg("s0"), -curfunc.stacksize));
-        }else{
-            Operand tmp = curfunc.addvreg();
-            curblock.addtail(new liInst(tmp, -curfunc.stacksize));
-            curblock.addtail(new biInst(reg, module.getphyreg("s0"), tmp, biInst.Op.add));
-        }
+        alloTrans.put(it.reg.name, reg);
+//        curfunc.stacksize+=4;
+//        if(checkimm(-curfunc.stacksize)){
+//            curblock.addtail(new addiInst(reg, module.getphyreg("s0"), -curfunc.stacksize));
+//        }else{
+//            Operand tmp = curfunc.addvreg();
+//            curblock.addtail(new liInst(tmp, -curfunc.stacksize));
+//            curblock.addtail(new biInst(reg, module.getphyreg("s0"), tmp, biInst.Op.add));
+//        }
     }
 
     @Override
@@ -387,7 +390,11 @@ public class InstSelector implements IRVisitor {
             Operand loadres = curfunc.addvreg();
             regTrans.put(it.resreg.name, loadres);
             curblock.addtail(new lwInst(loadres, address, 0));
-        }else{
+
+        }else if(alloTrans.containsKey(it.sourcereg.name)){
+            regTrans.put(it.resreg.name, alloTrans.get(it.sourcereg.name));
+        }
+        else{
             Operand loadres = getreg(it.sourcereg);
             regTrans.put(it.resreg.name, loadres);
         }
@@ -414,7 +421,10 @@ public class InstSelector implements IRVisitor {
         Operand source = null;
         if(regTrans.containsKey(it.resreg.name)){
             address = getreg(it.resreg);
-        }else{
+        }else if(alloTrans.containsKey(it.resreg.name)){
+            address = alloTrans.get(it.resreg.name);
+        }
+        else{
             address = curfunc.addvreg();
             curblock.addtail(new laInst(address, "."+it.resreg.name));
         }
@@ -425,7 +435,11 @@ public class InstSelector implements IRVisitor {
             targetreg = source;
             it.sourceop.accept(this);
         }
-        curblock.addtail(new swInst(source, address, 0));
+        if(alloTrans.containsKey(it.resreg.name)){
+            curblock.addtail(new mvInst(address, source));
+        }else {
+            curblock.addtail(new swInst(source, address, 0));
+        }
     }
 
     @Override public void visit(parameter it){}
