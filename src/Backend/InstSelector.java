@@ -392,7 +392,9 @@ public class InstSelector implements IRVisitor {
             curblock.addtail(new lwInst(loadres, address, 0));
 
         }else if(alloTrans.containsKey(it.sourcereg.name)){
-            regTrans.put(it.resreg.name, alloTrans.get(it.sourcereg.name));
+            Operand res = curfunc.addvreg();
+            curblock.addtail(new mvInst(res, alloTrans.get(it.sourcereg.name)));
+            regTrans.put(it.resreg.name, res);
         }
         else{
             Operand loadres = getreg(it.sourcereg);
